@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foto hochladen - Weihnachtsbaum 2025</title>
+    <meta name="description" content="Lade dein Foto hoch und werde Teil unseres Weihnachtsbaums">
+    <link rel="stylesheet" href="./css/upload.css">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+    <div class="starry-background"></div>
+
+    <div class="container">
+        <header>
+            <h1 class="title">🎄 Weihnachtsbaum 2025 🎄</h1>
+            <p class="subtitle">Werde Teil unseres Teams-Baums!</p>
+        </header>
+
+        <main>
+            <!-- Photo count -->
+            <div class="photo-count-display">
+                <span class="count-label">Aktuell hochgeladen:</span>
+                <span id="current-count" class="count-value">0 / 130</span>
+            </div>
+
+            <!-- Upload Form -->
+            <form id="upload-form" class="upload-form">
+                <div class="upload-area">
+                    <div class="upload-icon">📸</div>
+                    <h2>Mach ein Foto oder wähle eines aus</h2>
+                    <p class="upload-instructions">
+                        Dein Foto wird zu einer schönen Christbaumkugel verarbeitet
+                    </p>
+
+                    <input
+                        type="file"
+                        id="photo-input"
+                        accept="image/*"
+                        capture="user"
+                        style="display: none;"
+                    >
+
+                    <button type="button" id="camera-button" class="camera-button">
+                        📷 Foto aufnehmen
+                    </button>
+                </div>
+
+                <!-- Preview -->
+                <div id="preview" class="preview" style="display: none;">
+                    <h3>Vorschau</h3>
+                    <div class="preview-ornament">
+                        <img id="preview-img" src="" alt="Vorschau">
+                        <div class="preview-border"></div>
+                    </div>
+                </div>
+
+                <!-- Message -->
+                <div id="message" class="message" style="display: none;"></div>
+
+                <!-- Upload Button -->
+                <button
+                    type="submit"
+                    id="upload-button"
+                    class="upload-button"
+                    disabled
+                >
+                    🎄 Zum Baum hinzufügen
+                </button>
+            </form>
+
+            <!-- Success Message -->
+            <div id="success-message" class="status-card success-card" style="display: none;">
+                <div class="status-icon">🎉</div>
+                <h2>Danke für deine Teilnahme!</h2>
+                <p>Dein Foto wurde erfolgreich hochgeladen und erscheint jetzt als Christbaumkugel an unserem Team-Baum.</p>
+                <button onclick="viewTree()" class="view-tree-button">
+                    🎄 Baum ansehen
+                </button>
+            </div>
+
+            <!-- Already Uploaded Message -->
+            <div id="already-uploaded" class="status-card info-card" style="display: none;">
+                <div class="status-icon">✅</div>
+                <h2>Du hast bereits teilgenommen!</h2>
+                <p>Du hast bereits ein Foto hochgeladen. Jede Person kann nur einmal mitmachen.</p>
+                <button onclick="viewTree()" class="view-tree-button">
+                    🎄 Baum ansehen
+                </button>
+            </div>
+        </main>
+
+        <footer>
+            <p>
+                <a href="./index.html" class="footer-link">← Zurück zum Baum</a>
+            </p>
+            <p class="privacy-note">
+                Dein Foto wird im Team-Repository gespeichert.<br>
+                Keine personenbezogenen Daten außer dem Foto werden erfasst.
+            </p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="./js/utils.js"></script>
+    <script src="./js/photo-upload.js"></script>
+</body>
+</html>
