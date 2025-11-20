@@ -35,20 +35,38 @@ async function loadAndRenderTree() {
 }
 
 /**
- * Load photo data from JSON file
+ * Load photo data from JSON file or localStorage
  * @returns {Promise<Object>} Photo data
  */
 async function loadPhotoData() {
+    let jsonData = null;
+    let localData = null;
+
+    // Try to load from JSON file
     try {
         const response = await fetch('./data/photos.json?t=' + Date.now());
-        if (!response.ok) {
-            throw new Error('Failed to load photo data');
+        if (response.ok) {
+            jsonData = await response.json();
         }
-        return await response.json();
     } catch (error) {
-        console.error('Error loading photo data:', error);
-        // Return empty data structure if file doesn't exist yet
-        return {
+        console.log('Could not load from JSON file:', error.message);
+    }
+
+    // Try to load from localStorage
+    try {
+        const stored = localStorage.getItem('treePhotoData');
+        if (stored) {
+            localData = JSON.parse(stored);
+        }
+    } catch (error) {
+        console.log('Could not load from localStorage:', error.message);
+    }
+
+    // Use the data source with more photos, or localStorage if both have same count
+    let photoData = null;
+    if (!jsonData && !localData) {
+        // No data found, return empty structure
+        photoData = {
             photos: [],
             metadata: {
                 totalCount: 0,
@@ -56,7 +74,25 @@ async function loadPhotoData() {
                 lastUpdated: new Date().toISOString()
             }
         };
+    } else if (!jsonData) {
+        photoData = localData;
+    } else if (!localData) {
+        photoData = jsonData;
+    } else {
+        // Both exist, use the one with more photos (or newer timestamp)
+        if (localData.photos.length > jsonData.photos.length) {
+            photoData = localData;
+            console.log('Using localStorage data (more photos)');
+        } else if (localData.photos.length === jsonData.photos.length) {
+            const localTime = new Date(localData.metadata.lastUpdated).getTime();
+            const jsonTime = new Date(jsonData.metadata.lastUpdated).getTime();
+            photoData = localTime > jsonTime ? localData : jsonData;
+        } else {
+            photoData = jsonData;
+        }
     }
+
+    return photoData;
 }
 
 /**
@@ -125,12 +161,19 @@ function createOrnament(photo, position, index, isNew = false) {
     }
 
     // Calculate position as percentage for responsiveness
-    const container = document.getElementById('tree-container');
-    const containerRect = container.getBoundingClientRect();
+    const photoCount = currentPhotoData.photos.length;
+    const treeHeight = calculateTreeHeight(photoCount);
+    const treeWidth = treeHeight * 0.6;
 
-    ornament.style.left = `${(position.x / calculateTreeHeight(currentPhotoData.photos.length) * 0.6) * 100}%`;
-    ornament.style.top = `${(position.y / calculateTreeHeight(currentPhotoData.photos.length)) * 100}%`;
+    // Position relative to tree dimensions (add star offset)
+    const starOffset = 40; // Space for star at top
+    const leftPercent = (position.x / treeWidth) * 100;
+    const topPercent = ((position.y + starOffset) / (treeHeight + starOffset)) * 100;
+
+    ornament.style.left = `${leftPercent}%`;
+    ornament.style.top = `${topPercent}%`;
     ornament.style.transform = `translate(-50%, -50%) rotate(${position.rotation}deg)`;
+    ornament.style.setProperty('--rotation', `${position.rotation}deg`);
     ornament.style.width = `${position.radius * 2}px`;
     ornament.style.height = `${position.radius * 2}px`;
 

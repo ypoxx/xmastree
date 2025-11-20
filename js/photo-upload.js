@@ -249,9 +249,22 @@ async function savePhotoData(photoData) {
  * Update photo count display
  */
 async function updatePhotoCount() {
-    const photoData = await loadPhotoData();
-    const countElement = document.getElementById('current-count');
+    let photoData = await loadPhotoData();
 
+    // Also check localStorage for more recent data
+    try {
+        const localData = localStorage.getItem('treePhotoData');
+        if (localData) {
+            const parsed = JSON.parse(localData);
+            if (parsed.photos.length > photoData.photos.length) {
+                photoData = parsed;
+            }
+        }
+    } catch (error) {
+        console.log('Could not check localStorage');
+    }
+
+    const countElement = document.getElementById('current-count');
     if (countElement) {
         countElement.textContent = `${photoData.metadata.totalCount} / ${MAX_PHOTOS}`;
     }

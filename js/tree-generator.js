@@ -9,7 +9,7 @@
  * @returns {number} Tree height in pixels
  */
 function calculateTreeHeight(photoCount) {
-    const minHeight = 200;
+    const minHeight = 300; // Increased from 200 for better visibility
     const maxHeight = 800;
     const maxPhotos = 130;
     return minHeight + (photoCount / maxPhotos) * (maxHeight - minHeight);
@@ -38,8 +38,13 @@ function generateTree(photoCount) {
 
     const svgNS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("viewBox", `0 0 ${width} ${height + 100}`);
+
+    // Add space at top for star (40px) and bottom for trunk
+    const starOffset = 40;
+    const totalHeight = height + starOffset + 50;
+    svg.setAttribute("viewBox", `0 0 ${width} ${totalHeight}`);
     svg.setAttribute("class", "christmas-tree");
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
 
     // Create defs for filters and gradients
     const defs = document.createElementNS(svgNS, "defs");
@@ -90,18 +95,19 @@ function generateTree(photoCount) {
 
     svg.appendChild(defs);
 
-    // Create tree trunk
+    // Create tree trunk (offset by starOffset)
+    const starOffset = 40;
     const trunkWidth = width * 0.1;
     const trunkHeight = height * 0.15;
     const trunk = document.createElementNS(svgNS, "rect");
     trunk.setAttribute("x", (width - trunkWidth) / 2);
-    trunk.setAttribute("y", height - trunkHeight);
+    trunk.setAttribute("y", starOffset + height - trunkHeight);
     trunk.setAttribute("width", trunkWidth);
     trunk.setAttribute("height", trunkHeight);
     trunk.setAttribute("fill", "#4A3728");
     trunk.setAttribute("class", "tree-trunk");
 
-    // Create tree branches (triangular sections)
+    // Create tree branches (triangular sections, offset by starOffset)
     const branchGroup = document.createElementNS(svgNS, "g");
     branchGroup.setAttribute("class", "tree-branches");
 
@@ -109,7 +115,7 @@ function generateTree(photoCount) {
 
     for (let i = 0; i < levels; i++) {
         const levelWidth = width * (0.9 - (i * 0.08));
-        const levelTop = i * branchHeight * 0.85;
+        const levelTop = starOffset + i * branchHeight * 0.85;
         const levelBottom = levelTop + branchHeight * 1.2;
 
         const points = `
@@ -127,14 +133,14 @@ function generateTree(photoCount) {
         branchGroup.appendChild(branch);
     }
 
-    // Create star on top
+    // Create star on top (positioned at top of viewBox)
     const star = document.createElementNS(svgNS, "polygon");
-    const starSize = 30;
+    const starSize = 25;
     const starPoints = [];
     for (let i = 0; i < 5; i++) {
         const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
         const x = width / 2 + Math.cos(angle) * starSize;
-        const y = -10 + Math.sin(angle) * starSize;
+        const y = 20 + Math.sin(angle) * starSize; // Positioned at top with some padding
         starPoints.push(`${x},${y}`);
     }
     star.setAttribute("points", starPoints.join(" "));
