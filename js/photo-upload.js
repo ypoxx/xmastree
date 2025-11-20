@@ -204,45 +204,55 @@ async function loadPhotoData() {
 }
 
 /**
- * Save photo data to JSON
- * Note: This is a simplified version. In production, this would need
- * to use GitHub API or a serverless function to commit changes.
+ * Save photo data via API
+ * Uses serverless function to commit to GitHub
+ * Falls back to localStorage for local development
  * @param {Object} photoData - Photo data to save
  */
 async function savePhotoData(photoData) {
-    // For local development/testing, save to localStorage as fallback
-    localStorage.setItem('treePhotoData', JSON.stringify(photoData));
+    const previewImg = document.getElementById('preview-img');
+    const imageData = previewImg ? previewImg.src : null;
 
-    // In production, this would make a request to GitHub API or serverless function
-    // Example with GitHub API:
-    /*
-    const token = 'YOUR_GITHUB_TOKEN';
-    const repo = 'username/weihnachtsbaum';
-    const path = 'data/photos.json';
+    if (!imageData) {
+        throw new Error('No image data available');
+    }
 
-    const response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `token ${token}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            message: 'Add new photo',
-            content: btoa(JSON.stringify(photoData, null, 2)),
-            sha: currentFileSHA // Need to get this first with GET request
-        })
-    });
-    */
+    // Try to use API endpoint
+    try {
+        // Check if we're running in production (has /api/upload endpoint)
+        const apiUrl = '/api/upload';
 
-    // For now, show instructions to user
-    console.log('Photo data to save:', photoData);
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                imageData: imageData
+            })
+        });
 
-    // Simulate async operation
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve();
-        }, 1000);
-    });
+        if (response.ok) {
+            const result = await response.json();
+            console.log('Upload successful:', result);
+            return result;
+        } else if (response.status === 404) {
+            // API not available (local development)
+            console.log('API not available, using localStorage fallback');
+            throw new Error('API_NOT_AVAILABLE');
+        } else {
+            const error = await response.json();
+            throw new Error(error.message || error.error || 'Upload failed');
+        }
+    } catch (error) {
+        // Fallback to localStorage for local development
+        if (error.message === 'API_NOT_AVAILABLE' || error.message.includes('fetch')) {
+            console.log('Using localStorage for local development');
+            localStorage.setItem('treePhotoData', JSON.stringify(photoData));
+            return { success: true, local: true };
+        }
+        throw error;
+    }
 }
 
 /**

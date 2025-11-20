@@ -17,9 +17,13 @@ Diese Web-Anwendung ermöglicht es Team-Mitgliedern, Fotos von sich hochzuladen,
 
 ## Live-Demo
 
-Die App ist erreichbar unter:
-- **Display-Seite**: `https://[username].github.io/xmastree/`
-- **Upload-Seite**: `https://[username].github.io/xmastree/upload.html`
+Die App kann deployed werden auf:
+- **Vercel** (Empfohlen): Mit Upload-Backend-Funktion
+- **GitHub Pages**: Nur Display, Upload benötigt separates Backend
+
+Nach Deployment erreichbar unter:
+- **Display-Seite**: `https://your-project.vercel.app/` oder `https://[username].github.io/xmastree/`
+- **Upload-Seite**: `https://your-project.vercel.app/upload.html`
 
 ## Tech-Stack
 
@@ -50,28 +54,46 @@ xmastree/
         └── deploy.yml     # GitHub Actions Workflow
 ```
 
-## Schnellstart
+## 🚀 Schnellstart
 
-### 1. Repository Setup
+### Lokale Entwicklung
 
 ```bash
 # Repository klonen
 git clone https://github.com/[username]/xmastree.git
 cd xmastree
 
-# Öffne index.html in einem Browser (oder nutze einen lokalen Server)
+# Lokalen Server starten
 python -m http.server 8000
 # Oder mit Node.js:
 npx serve
+
+# Öffne: http://localhost:8000
 ```
 
-### 2. GitHub Pages aktivieren
+**Hinweis**: Lokale Entwicklung nutzt `localStorage` für Foto-Speicherung.
+
+### Produktiv-Deployment mit Upload-Funktion
+
+Für echte Uploads benötigst du ein Backend. **Empfohlen: Vercel mit GitHub API**
+
+📖 **Vollständige Anleitung**: Siehe [SETUP.md](./SETUP.md)
+
+**Kurzfassung**:
+1. GitHub Personal Access Token erstellen
+2. Projekt auf Vercel deployen
+3. Environment Variables setzen (`GITHUB_TOKEN`, `GITHUB_REPO`)
+4. Fertig! Uploads funktionieren automatisch
+
+### Alternative: Nur Display (GitHub Pages)
+
+Für nur-Display ohne Upload-Funktion:
 
 1. Gehe zu Repository Settings → Pages
 2. Wähle "GitHub Actions" als Source
 3. Der erste Push zum main-Branch triggert automatisch das Deployment
 
-### 3. QR-Code erstellen
+### QR-Code erstellen
 
 Für einfachen Mobile-Zugriff kannst du einen QR-Code für die Upload-URL erstellen:
 
@@ -164,32 +186,34 @@ function calculateTreeHeight(photoCount) {
 }
 ```
 
-## Bekannte Einschränkungen
+## Upload-Backend
 
-### Upload-Funktionalität
+### ✅ Implementiert: Vercel + GitHub API
 
-Die aktuelle Implementation speichert Uploads nur lokal im `localStorage`. Für Produktiv-Einsatz benötigst du eine der folgenden Lösungen:
+Das Projekt enthält eine vollständig funktionsfähige Upload-Lösung:
 
-#### Option 1: GitHub API (Empfohlen)
+- **Serverless Function** (`/api/upload`) committet Fotos direkt zu GitHub
+- **Automatisches Fallback** zu localStorage für lokale Entwicklung
+- **Sicher**: GitHub Token bleibt serverseitig
+- **Kostenlos**: Vercel Free Tier ist ausreichend
 
-Erstelle ein Personal Access Token und nutze die GitHub API zum Committen:
+📖 **Setup-Anleitung**: Siehe [SETUP.md](./SETUP.md)
 
-```javascript
-// Siehe photo-upload.js Kommentare für Implementierung
-```
+### Alternative Backend-Optionen
 
-#### Option 2: Serverless Function
+Falls Vercel nicht passt, sind auch möglich:
 
-Nutze Vercel, Netlify oder Cloudflare Workers:
+#### Option 1: Netlify Functions
 
-```javascript
-// POST /api/upload
-// Body: { photoData: "base64..." }
-```
+Gleicher Code, läuft auch auf Netlify. Anleitung in `SETUP.md`.
+
+#### Option 2: Cloudflare Workers
+
+Anpassung der API-Function für Cloudflare Workers möglich.
 
 #### Option 3: Firebase/Supabase
 
-Integriere einen Backend-Service für Echtzeit-Updates.
+Für Echtzeit-Updates ohne GitHub-Commits.
 
 ## Browser-Kompatibilität
 
