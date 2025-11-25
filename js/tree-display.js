@@ -127,7 +127,7 @@ async function loadPhotoData() {
 }
 
 /**
- * Render the complete tree with photos
+ * Render the complete tree with photos - PURE SVG SOLUTION
  * @param {Object} photoData - Photo data from JSON
  * @param {boolean} isNewPhoto - Whether a new photo was just added
  */
@@ -139,122 +139,24 @@ function renderTree(photoData, isNewPhoto = false) {
     container.innerHTML = '';
 
     const photoCount = photoData.photos.length;
-    const treeHeight = calculateTreeHeight(photoCount);
-    const treeWidth = treeHeight * 0.6;
 
-    // Generate tree SVG (now returns object with branch data)
-    const treeSVG = generateTree(photoCount);
-    container.appendChild(treeSVG);
+    // Generate tree with empty ornaments first to get triangle bounds
+    const emptyTree = generateTree(photoCount, [], []);
+    const triangleBounds = emptyTree.triangleBounds || [];
 
-    // Get branch data from SVG
-    const branchData = treeSVG.branchData || [];
-
-    // Generate photo positions using today's seed and BRANCH DATA
+    // Generate photo positions using today's seed and triangle bounds
     const seed = getTodaySeed();
-    const positions = generatePhotoPositions(photoCount, branchData, seed);
+    const positions = generatePhotoPositions(photoCount, triangleBounds, seed);
 
-    // Create SVG group for hanging strings (must be in SVG coordinate space)
-    const svgNS = "http://www.w3.org/2000/svg";
-    const stringsGroup = document.createElementNS(svgNS, "g");
-    stringsGroup.setAttribute("class", "ornament-strings");
-
-    // Draw hanging strings for each ornament
-    positions.forEach((pos, index) => {
-        // String from branch attachment point to ornament center
-        const string = document.createElementNS(svgNS, "line");
-        string.setAttribute("x1", pos.hangX);
-        string.setAttribute("y1", pos.hangY);
-        string.setAttribute("x2", pos.x);
-        string.setAttribute("y2", pos.y);
-        string.setAttribute("stroke", "rgba(139, 69, 19, 0.6)");
-        string.setAttribute("stroke-width", "1");
-        string.setAttribute("class", "ornament-string");
-        stringsGroup.appendChild(string);
-    });
-
-    // Add strings to SVG (before ornaments so they appear behind)
-    treeSVG.appendChild(stringsGroup);
-
-    // Create photo ornaments
-    const ornamentsContainer = document.createElement('div');
-    ornamentsContainer.className = 'ornaments-container';
-    ornamentsContainer.style.position = 'absolute';
-    ornamentsContainer.style.top = '0';
-    ornamentsContainer.style.left = '0';
-    ornamentsContainer.style.width = '100%';
-    ornamentsContainer.style.height = '100%';
-    ornamentsContainer.style.pointerEvents = 'none';
-
-    photoData.photos.forEach((photo, index) => {
-        if (index < positions.length) {
-            const ornament = createOrnament(photo, positions[index], index, isNewPhoto && index === photoCount - 1);
-            ornamentsContainer.appendChild(ornament);
-        }
-    });
-
-    container.appendChild(ornamentsContainer);
+    // Now generate complete tree with photos and positions
+    const treeSVG = generateTree(photoCount, photoData.photos, positions);
+    container.appendChild(treeSVG);
 
     // Add animation class to tree if it's growing
     if (isNewPhoto) {
         treeSVG.classList.add('tree-growing');
         setTimeout(() => treeSVG.classList.remove('tree-growing'), 500);
     }
-}
-
-/**
- * Create a photo ornament element
- * @param {Object} photo - Photo data
- * @param {Object} position - Position data {x, y, rotation, radius, hangX, hangY}
- * @param {number} index - Photo index
- * @param {boolean} isNew - Whether this is a newly added photo
- * @returns {HTMLElement} Ornament element
- */
-function createOrnament(photo, position, index, isNew = false) {
-    const ornament = document.createElement('div');
-    ornament.className = 'ornament';
-    if (isNew) {
-        ornament.classList.add('ornament-new');
-    }
-
-    // Calculate position as percentage for responsiveness
-    const photoCount = currentPhotoData.photos.length;
-    const treeHeight = calculateTreeHeight(photoCount);
-    const treeWidth = treeHeight * 0.6;
-    const starOffset = 40;
-    const totalHeight = treeHeight + starOffset + 50;
-
-    // Position.x and position.y are already in SVG coordinate space
-    // Convert to percentage of total SVG viewBox
-    const leftPercent = (position.x / treeWidth) * 100;
-    const topPercent = (position.y / totalHeight) * 100;
-
-    ornament.style.left = `${leftPercent}%`;
-    ornament.style.top = `${topPercent}%`;
-    ornament.style.transform = `translate(-50%, -50%) rotate(${position.rotation}deg)`;
-    ornament.style.setProperty('--rotation', `${position.rotation}deg`);
-    ornament.style.setProperty('--i', index);
-    ornament.style.width = `${position.radius * 2}px`;
-    ornament.style.height = `${position.radius * 2}px`;
-
-    // Create image
-    const img = document.createElement('img');
-    img.src = photo.imageData;
-    img.alt = 'Team member';
-    img.className = 'ornament-image';
-
-    // Create border (alternating gold/silver)
-    const border = document.createElement('div');
-    border.className = index % 2 === 0 ? 'ornament-border-gold' : 'ornament-border-silver';
-
-    // Create glitter overlay
-    const glitter = document.createElement('div');
-    glitter.className = 'ornament-glitter';
-
-    ornament.appendChild(img);
-    ornament.appendChild(border);
-    ornament.appendChild(glitter);
-
-    return ornament;
 }
 
 /**

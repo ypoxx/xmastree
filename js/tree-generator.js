@@ -17,21 +17,22 @@ function calculateTreeHeight(photoCount) {
 
 /**
  * Calculate number of branch levels based on photo count
+ * Always use 7 levels for realistic tree appearance
  * @param {number} photoCount - Number of photos uploaded
- * @returns {number} Number of branch levels
+ * @returns {number} Number of branch levels (always 7)
  */
 function getBranchLevels(photoCount) {
-    if (photoCount <= 20) return 3;
-    if (photoCount <= 70) return 5;
-    return 7;
+    return 7; // Fixed 7 levels for realistic zigzag appearance
 }
 
 /**
- * Generate SVG Christmas tree with radial branches
+ * Generate SVG Christmas tree - PURE SVG (everything in one coordinate system)
  * @param {number} photoCount - Number of photos to determine tree size
- * @returns {Object} { svg: SVGElement, branches: Array of branch data }
+ * @param {Array} photoData - Photo data array
+ * @param {Array} positions - Ornament positions
+ * @returns {SVGElement} Complete SVG with tree, ornaments, and strings
  */
-function generateTree(photoCount) {
+function generateTree(photoCount, photoData = [], positions = []) {
     const height = calculateTreeHeight(photoCount);
     const width = height * 0.6;
     const levels = getBranchLevels(photoCount);
@@ -115,18 +116,19 @@ function generateTree(photoCount) {
     trunk.setAttribute("class", "tree-trunk");
     trunk.setAttribute("rx", "3");
 
-    // SCHRITT 1: Grüne Füllmasse (Dreiecks-Struktur)
+    // Create 7 layered triangles for realistic tree
     const foliageGroup = document.createElementNS(svgNS, "g");
     foliageGroup.setAttribute("class", "tree-foliage");
 
     const branchHeight = (height - trunkHeight) / levels;
+    const triangleBounds = []; // Store triangle bounds for ornament placement
 
     for (let i = 0; i < levels; i++) {
-        const levelWidth = width * (0.85 - (i * 0.1));
-        const levelTop = starOffset + i * branchHeight * 0.9;
-        const levelBottom = levelTop + branchHeight * 1.3;
+        const levelWidth = width * (0.88 - (i * 0.09));
+        const levelTop = starOffset + i * branchHeight * 0.88;
+        const levelBottom = levelTop + branchHeight * 1.35;
 
-        // Main triangular foliage section
+        // Triangular foliage section
         const points = `
             ${centerX},${levelTop}
             ${(width - levelWidth) / 2},${levelBottom}
@@ -136,71 +138,21 @@ function generateTree(photoCount) {
         const foliage = document.createElementNS(svgNS, "polygon");
         foliage.setAttribute("points", points);
         foliage.setAttribute("fill", "url(#branchGradient)");
-        foliage.setAttribute("opacity", "0.85");
+        foliage.setAttribute("opacity", "0.9");
         foliage.setAttribute("class", `foliage-level-${i}`);
 
         foliageGroup.appendChild(foliage);
-    }
 
-    // SCHRITT 2: Radiale Äste als Detail darüber
-    const branchGroup = document.createElementNS(svgNS, "g");
-    branchGroup.setAttribute("class", "tree-branches");
-
-    const branchData = []; // Store branch coordinates for ornament placement
-    const availableTreeHeight = height - trunkHeight;
-
-    // Fewer but more visible branches
-    const branchesPerLevel = Math.min(6 + Math.floor(photoCount / 30), 10);
-
-    // Create branches for each level
-    for (let level = 0; level < levels; level++) {
-        const levelProgress = level / (levels - 1 || 1);
-        const levelY = starOffset + (levelProgress * availableTreeHeight * 0.85);
-
-        // Branch length grows as we go down
-        const baseBranchLength = width * 0.35;
-        const branchLength = baseBranchLength * (0.4 + levelProgress * 0.6);
-
-        // Number of branches at this level
-        const numBranches = Math.floor(branchesPerLevel * (0.5 + levelProgress * 0.5));
-
-        for (let b = 0; b < numBranches; b++) {
-            const angleOffset = level * 0.5;
-            const angle = (b / numBranches) * Math.PI * 2 + angleOffset;
-
-            const startX = centerX;
-            const startY = levelY;
-
-            const endX = centerX + Math.cos(angle) * branchLength;
-            const endY = levelY + Math.sin(angle) * branchLength * 0.2;
-
-            const controlX = startX + Math.cos(angle) * branchLength * 0.7;
-            const controlY = startY + branchLength * 0.2;
-
-            // Create visible branch path
-            const branchPath = document.createElementNS(svgNS, "path");
-            const d = `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
-            branchPath.setAttribute("d", d);
-            branchPath.setAttribute("stroke", "#2D5016");
-            branchPath.setAttribute("stroke-width", 4 + level * 0.8);
-            branchPath.setAttribute("fill", "none");
-            branchPath.setAttribute("stroke-linecap", "round");
-            branchPath.setAttribute("class", `branch branch-level-${level}`);
-            branchPath.setAttribute("opacity", "0.7");
-
-            branchGroup.appendChild(branchPath);
-
-            // Store branch data for ornament placement
-            branchData.push({
-                id: `${level}-${b}`,
-                level: level,
-                startX, startY,
-                endX, endY,
-                controlX, controlY,
-                length: branchLength,
-                angle: angle
-            });
-        }
+        // Store bounds for ornament placement
+        triangleBounds.push({
+            level: i,
+            topY: levelTop,
+            bottomY: levelBottom,
+            leftX: (width - levelWidth) / 2,
+            rightX: (width + levelWidth) / 2,
+            centerX: centerX,
+            width: levelWidth
+        });
     }
 
     // Create star on top
@@ -217,71 +169,175 @@ function generateTree(photoCount) {
     star.setAttribute("fill", "#FFD700");
     star.setAttribute("class", "tree-star");
 
-    // Append in correct order (back to front)
-    svg.appendChild(trunk);          // 1. Trunk (back)
-    svg.appendChild(foliageGroup);   // 2. Green foliage mass
-    svg.appendChild(branchGroup);    // 3. Detail branches on top
-    svg.appendChild(star);           // 4. Star (front)
+    // Create clipPaths for round ornaments
+    for (let i = 0; i < photoData.length; i++) {
+        const clipPath = document.createElementNS(svgNS, "clipPath");
+        clipPath.setAttribute("id", `ornament-clip-${i}`);
+        const circle = document.createElementNS(svgNS, "circle");
+        circle.setAttribute("cx", positions[i].radius);
+        circle.setAttribute("cy", positions[i].radius);
+        circle.setAttribute("r", positions[i].radius);
+        clipPath.appendChild(circle);
+        defs.appendChild(clipPath);
+    }
 
-    // Store branch data in SVG for later access
-    svg.branchData = branchData;
+    // Hanging strings group
+    const stringsGroup = document.createElementNS(svgNS, "g");
+    stringsGroup.setAttribute("class", "ornament-strings");
+
+    // Ornaments group
+    const ornamentsGroup = document.createElementNS(svgNS, "g");
+    ornamentsGroup.setAttribute("class", "ornaments");
+
+    // Add each ornament with its string
+    photoData.forEach((photo, index) => {
+        if (index >= positions.length) return;
+
+        const pos = positions[index];
+
+        // String from attachment point to ornament center
+        const string = document.createElementNS(svgNS, "line");
+        string.setAttribute("x1", pos.hangX);
+        string.setAttribute("y1", pos.hangY);
+        string.setAttribute("x2", pos.x);
+        string.setAttribute("y2", pos.y);
+        string.setAttribute("stroke", "rgba(139, 69, 19, 0.6)");
+        string.setAttribute("stroke-width", "1.5");
+        string.setAttribute("class", "ornament-string");
+        stringsGroup.appendChild(string);
+
+        // Ornament group (for transform)
+        const ornamentGroup = document.createElementNS(svgNS, "g");
+        ornamentGroup.setAttribute("transform", `translate(${pos.x - pos.radius}, ${pos.y - pos.radius}) rotate(${pos.rotation} ${pos.radius} ${pos.radius})`);
+        ornamentGroup.setAttribute("class", "ornament");
+        ornamentGroup.setAttribute("data-index", index);
+
+        // Photo image (clipped to circle)
+        const image = document.createElementNS(svgNS, "image");
+        image.setAttributeNS("http://www.w3.org/1999/xlink", "href", photo.imageData);
+        image.setAttribute("x", 0);
+        image.setAttribute("y", 0);
+        image.setAttribute("width", pos.radius * 2);
+        image.setAttribute("height", pos.radius * 2);
+        image.setAttribute("clip-path", `url(#ornament-clip-${index})`);
+        image.setAttribute("class", "ornament-image");
+        ornamentGroup.appendChild(image);
+
+        // Border circle (gold/silver alternating)
+        const border = document.createElementNS(svgNS, "circle");
+        border.setAttribute("cx", pos.radius);
+        border.setAttribute("cy", pos.radius);
+        border.setAttribute("r", pos.radius);
+        border.setAttribute("fill", "none");
+        border.setAttribute("stroke", index % 2 === 0 ? "#FFD700" : "#C0C0C0");
+        border.setAttribute("stroke-width", "3");
+        border.setAttribute("class", "ornament-border");
+        ornamentGroup.appendChild(border);
+
+        ornamentsGroup.appendChild(ornamentGroup);
+    });
+
+    // Append in correct order (back to front)
+    svg.appendChild(trunk);          // 1. Trunk
+    svg.appendChild(foliageGroup);   // 2. Green foliage
+    svg.appendChild(stringsGroup);   // 3. Strings
+    svg.appendChild(ornamentsGroup); // 4. Ornaments
+    svg.appendChild(star);           // 5. Star (front)
+
+    // Store triangle bounds in SVG for later access
+    svg.triangleBounds = triangleBounds;
 
     return svg;
 }
 
 /**
- * Generate photo positions along tree branches
+ * Generate photo positions within triangle bounds
  * Uses seeded random to ensure consistent positions for all viewers
- * CRITICAL: Ornaments are placed ALONG branches, not randomly in space!
  * @param {number} photoCount - Number of photos
- * @param {Array} branchData - Array of branch objects with coordinates
+ * @param {Array} triangleBounds - Array of triangle boundaries
  * @param {number} seed - Seed for random number generator
- * @returns {Array} Array of position objects {x, y, rotation, size, branchId, hangX, hangY}
+ * @returns {Array} Array of position objects {x, y, rotation, radius, hangX, hangY}
  */
-function generatePhotoPositions(photoCount, branchData, seed) {
+function generatePhotoPositions(photoCount, triangleBounds, seed) {
     const rng = seededRandom(seed);
     const positions = [];
     const ornamentRadius = 25; // Base radius
+    const maxAttempts = 100;
 
-    if (!branchData || branchData.length === 0) {
-        console.error('No branch data available for positioning!');
+    if (!triangleBounds || triangleBounds.length === 0) {
+        console.error('No triangle bounds available for positioning!');
         return positions;
     }
 
-    // Distribute photos across branches
     for (let i = 0; i < photoCount; i++) {
-        // Select a random branch (seeded)
-        const branchIndex = Math.floor(rng() * branchData.length);
-        const branch = branchData[branchIndex];
+        let attempts = 0;
+        let validPosition = null;
 
-        // Position along branch (0 = start at trunk, 1 = end of branch)
-        // Prefer positions 0.4-0.9 along branch (not too close to trunk, not at very tip)
-        const t = 0.4 + rng() * 0.5;
+        while (attempts < maxAttempts && !validPosition) {
+            // Select a random triangle level (seeded)
+            const triangleIndex = Math.floor(rng() * triangleBounds.length);
+            const triangle = triangleBounds[triangleIndex];
 
-        // Calculate point on bezier curve: P(t) = (1-t)²P₀ + 2(1-t)tP₁ + t²P₂
-        const x = (1-t)*(1-t)*branch.startX + 2*(1-t)*t*branch.controlX + t*t*branch.endX;
-        const y = (1-t)*(1-t)*branch.startY + 2*(1-t)*t*branch.controlY + t*t*branch.endY;
+            // Random Y position within triangle
+            const yProgress = rng(); // 0-1
+            const y = triangle.topY + (yProgress * (triangle.bottomY - triangle.topY));
 
-        // Ornament hangs DOWN from the branch
-        const hangDistance = 5 + ornamentRadius; // String length + ornament radius
-        const ornamentY = y + hangDistance;
+            // Calculate width at this Y (triangle narrows towards top)
+            const triangleHeight = triangle.bottomY - triangle.topY;
+            const yFromTop = y - triangle.topY;
+            const widthAtY = triangle.width * (yFromTop / triangleHeight);
 
-        // Random rotation
-        const rotation = (rng() - 0.5) * 15; // -7.5° to +7.5° for swing
+            // Random X position within width at this Y
+            const xProgress = (rng() - 0.5); // -0.5 to +0.5
+            const x = triangle.centerX + (xProgress * widthAtY * 0.7); // 0.7 factor for safety margin
 
-        // Random size variation
-        const size = ornamentRadius + (rng() - 0.5) * 8; // ±4px variation
+            // Random size variation
+            const size = ornamentRadius + (rng() - 0.5) * 8; // ±4px variation
 
-        positions.push({
-            x: x,              // Ornament X position
-            y: ornamentY,      // Ornament Y position (below branch)
-            hangX: x,          // Where string attaches to branch
-            hangY: y,          // Where string attaches to branch
-            rotation: rotation,
-            radius: size,
-            branchId: branch.id,
-            branchLevel: branch.level
-        });
+            const newPosition = { x, y, radius: size };
+
+            // Check collision with existing positions
+            let hasCollision = false;
+            for (const pos of positions) {
+                const dist = Math.sqrt(Math.pow(newPosition.x - pos.x, 2) + Math.pow(newPosition.y - pos.y, 2));
+                if (dist < (newPosition.radius + pos.radius + 5)) { // 5px minimum spacing
+                    hasCollision = true;
+                    break;
+                }
+            }
+
+            if (!hasCollision) {
+                // String hangs from a point slightly above
+                const hangDistance = 8;
+                validPosition = {
+                    x: x,
+                    y: y,
+                    hangX: x,
+                    hangY: y - hangDistance,
+                    rotation: (rng() - 0.5) * 15, // -7.5° to +7.5°
+                    radius: size
+                };
+            }
+
+            attempts++;
+        }
+
+        if (validPosition) {
+            positions.push(validPosition);
+        } else {
+            // Fallback: force placement
+            const triangle = triangleBounds[i % triangleBounds.length];
+            const yProgress = (i / photoCount);
+            const y = triangle.topY + (yProgress * (triangle.bottomY - triangle.topY));
+            positions.push({
+                x: triangle.centerX,
+                y: y,
+                hangX: triangle.centerX,
+                hangY: y - 8,
+                rotation: (rng() - 0.5) * 15,
+                radius: ornamentRadius
+            });
+        }
     }
 
     return positions;
