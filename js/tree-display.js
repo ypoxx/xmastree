@@ -13,9 +13,36 @@ async function initTreeDisplay() {
     try {
         await loadAndRenderTree();
         startPolling();
+        setupRefreshButton();
     } catch (error) {
         console.error('Error initializing tree display:', error);
         showError('Fehler beim Laden des Weihnachtsbaums');
+    }
+}
+
+/**
+ * Setup manual refresh button
+ */
+function setupRefreshButton() {
+    const refreshButton = document.getElementById('refresh-button');
+    if (refreshButton) {
+        refreshButton.addEventListener('click', async () => {
+            refreshButton.disabled = true;
+            refreshButton.textContent = 'Lädt...';
+
+            try {
+                // Force reload by clearing cache
+                await loadAndRenderTree();
+                refreshButton.textContent = '✓ Aktualisiert!';
+                setTimeout(() => {
+                    refreshButton.textContent = 'Baum aktualisieren';
+                    refreshButton.disabled = false;
+                }, 2000);
+            } catch (error) {
+                refreshButton.textContent = 'Fehler - nochmal versuchen';
+                refreshButton.disabled = false;
+            }
+        });
     }
 }
 
@@ -35,64 +62,49 @@ async function loadAndRenderTree() {
 }
 
 /**
- * Load photo data from JSON file or localStorage
+ * Load photo data from JSON file (primary source) with localStorage fallback
+ * Always prefer photos.json to ensure consistency across all devices
  * @returns {Promise<Object>} Photo data
  */
 async function loadPhotoData() {
-    let jsonData = null;
-    let localData = null;
-
-    // Try to load from JSON file
+    // Try to load from JSON file (PRIMARY SOURCE)
     try {
         const response = await fetch('./data/photos.json?t=' + Date.now());
         if (response.ok) {
-            jsonData = await response.json();
+            const jsonData = await response.json();
+            console.log('✓ Loaded from photos.json:', jsonData.metadata.totalCount, 'photos');
+
+            // Clear localStorage to avoid confusion
+            localStorage.removeItem('treePhotoData');
+
+            return jsonData;
         }
     } catch (error) {
         console.log('Could not load from JSON file:', error.message);
     }
 
-    // Try to load from localStorage
+    // Fallback: localStorage (only for local development)
     try {
         const stored = localStorage.getItem('treePhotoData');
         if (stored) {
-            localData = JSON.parse(stored);
+            const localData = JSON.parse(stored);
+            console.warn('⚠ Using localStorage fallback:', localData.metadata.totalCount, 'photos');
+            return localData;
         }
     } catch (error) {
         console.log('Could not load from localStorage:', error.message);
     }
 
-    // Use the data source with more photos, or localStorage if both have same count
-    let photoData = null;
-    if (!jsonData && !localData) {
-        // No data found, return empty structure
-        photoData = {
-            photos: [],
-            metadata: {
-                totalCount: 0,
-                maxPhotos: 130,
-                lastUpdated: new Date().toISOString()
-            }
-        };
-    } else if (!jsonData) {
-        photoData = localData;
-    } else if (!localData) {
-        photoData = jsonData;
-    } else {
-        // Both exist, use the one with more photos (or newer timestamp)
-        if (localData.photos.length > jsonData.photos.length) {
-            photoData = localData;
-            console.log('Using localStorage data (more photos)');
-        } else if (localData.photos.length === jsonData.photos.length) {
-            const localTime = new Date(localData.metadata.lastUpdated).getTime();
-            const jsonTime = new Date(jsonData.metadata.lastUpdated).getTime();
-            photoData = localTime > jsonTime ? localData : jsonData;
-        } else {
-            photoData = jsonData;
+    // Last resort: empty structure
+    console.log('ℹ No photos found, returning empty tree');
+    return {
+        photos: [],
+        metadata: {
+            totalCount: 0,
+            maxPhotos: 130,
+            lastUpdated: new Date().toISOString()
         }
-    }
-
-    return photoData;
+    };
 }
 
 /**

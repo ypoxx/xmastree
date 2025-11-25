@@ -49,7 +49,7 @@ function generateTree(photoCount) {
     // Create defs for filters and gradients
     const defs = document.createElementNS(svgNS, "defs");
 
-    // Gradient for tree
+    // Main gradient for tree (depth effect)
     const gradient = document.createElementNS(svgNS, "linearGradient");
     gradient.setAttribute("id", "treeGradient");
     gradient.setAttribute("x1", "0%");
@@ -59,20 +59,43 @@ function generateTree(photoCount) {
 
     const stop1 = document.createElementNS(svgNS, "stop");
     stop1.setAttribute("offset", "0%");
-    stop1.setAttribute("style", "stop-color:#2D5016;stop-opacity:1");
+    stop1.setAttribute("style", "stop-color:#1a3d0f;stop-opacity:1");
 
     const stop2 = document.createElementNS(svgNS, "stop");
-    stop2.setAttribute("offset", "50%");
-    stop2.setAttribute("style", "stop-color:#3D6B1F;stop-opacity:1");
+    stop2.setAttribute("offset", "30%");
+    stop2.setAttribute("style", "stop-color:#2D5016;stop-opacity:1");
 
     const stop3 = document.createElementNS(svgNS, "stop");
-    stop3.setAttribute("offset", "100%");
-    stop3.setAttribute("style", "stop-color:#4A7C28;stop-opacity:1");
+    stop3.setAttribute("offset", "50%");
+    stop3.setAttribute("style", "stop-color:#3D6B1F;stop-opacity:1");
+
+    const stop4 = document.createElementNS(svgNS, "stop");
+    stop4.setAttribute("offset", "70%");
+    stop4.setAttribute("style", "stop-color:#4A7C28;stop-opacity:1");
+
+    const stop5 = document.createElementNS(svgNS, "stop");
+    stop5.setAttribute("offset", "100%");
+    stop5.setAttribute("style", "stop-color:#5a8c35;stop-opacity:1");
 
     gradient.appendChild(stop1);
     gradient.appendChild(stop2);
     gradient.appendChild(stop3);
+    gradient.appendChild(stop4);
+    gradient.appendChild(stop5);
     defs.appendChild(gradient);
+
+    // Shadow gradient
+    const shadowGradient = document.createElementNS(svgNS, "radialGradient");
+    shadowGradient.setAttribute("id", "treeShadow");
+    const shadowStop1 = document.createElementNS(svgNS, "stop");
+    shadowStop1.setAttribute("offset", "0%");
+    shadowStop1.setAttribute("style", "stop-color:#000000;stop-opacity:0.3");
+    const shadowStop2 = document.createElementNS(svgNS, "stop");
+    shadowStop2.setAttribute("offset", "100%");
+    shadowStop2.setAttribute("style", "stop-color:#000000;stop-opacity:0");
+    shadowGradient.appendChild(shadowStop1);
+    shadowGradient.appendChild(shadowStop2);
+    defs.appendChild(shadowGradient);
 
     // Glitter filter for ornaments
     const filter = document.createElementNS(svgNS, "filter");
@@ -95,16 +118,43 @@ function generateTree(photoCount) {
 
     svg.appendChild(defs);
 
-    // Create tree trunk (offset by starOffset)
-    const trunkWidth = width * 0.1;
+    // Create tree trunk with gradient (offset by starOffset)
+    const trunkWidth = width * 0.12;
     const trunkHeight = height * 0.15;
+
+    // Trunk gradient
+    const trunkGradient = document.createElementNS(svgNS, "linearGradient");
+    trunkGradient.setAttribute("id", "trunkGradient");
+    trunkGradient.setAttribute("x1", "0%");
+    trunkGradient.setAttribute("y1", "0%");
+    trunkGradient.setAttribute("x2", "100%");
+    trunkGradient.setAttribute("y2", "0%");
+
+    const trunkStop1 = document.createElementNS(svgNS, "stop");
+    trunkStop1.setAttribute("offset", "0%");
+    trunkStop1.setAttribute("style", "stop-color:#3d2817;stop-opacity:1");
+
+    const trunkStop2 = document.createElementNS(svgNS, "stop");
+    trunkStop2.setAttribute("offset", "50%");
+    trunkStop2.setAttribute("style", "stop-color:#4A3728;stop-opacity:1");
+
+    const trunkStop3 = document.createElementNS(svgNS, "stop");
+    trunkStop3.setAttribute("offset", "100%");
+    trunkStop3.setAttribute("style", "stop-color:#5d4a3a;stop-opacity:1");
+
+    trunkGradient.appendChild(trunkStop1);
+    trunkGradient.appendChild(trunkStop2);
+    trunkGradient.appendChild(trunkStop3);
+    defs.appendChild(trunkGradient);
+
     const trunk = document.createElementNS(svgNS, "rect");
     trunk.setAttribute("x", (width - trunkWidth) / 2);
     trunk.setAttribute("y", starOffset + height - trunkHeight);
     trunk.setAttribute("width", trunkWidth);
     trunk.setAttribute("height", trunkHeight);
-    trunk.setAttribute("fill", "#4A3728");
+    trunk.setAttribute("fill", "url(#trunkGradient)");
     trunk.setAttribute("class", "tree-trunk");
+    trunk.setAttribute("rx", "3");
 
     // Create tree branches (triangular sections, offset by starOffset)
     const branchGroup = document.createElementNS(svgNS, "g");
