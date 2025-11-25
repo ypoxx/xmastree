@@ -134,6 +134,22 @@ main {
     opacity: 0.5;
 }
 
+/* Branch detail styles - small protruding branches */
+[class*="branch-detail-"] {
+    transition: opacity 0.3s ease;
+}
+
+/* Subtle color variation by level for more realism */
+.foliage-level-0,
+.foliage-level-1 {
+    filter: brightness(0.95);
+}
+
+.foliage-level-5,
+.foliage-level-6 {
+    filter: brightness(1.05);
+}
+
 /* Ornament hanging strings */
 .ornament-string {
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));

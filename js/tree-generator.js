@@ -128,29 +128,68 @@ function generateTree(photoCount, photoData = [], positions = []) {
         const levelWidth = width * (0.15 + (i * 0.11)); // Top: 0.15*width, Bottom: 0.92*width
         const levelTop = starOffset + i * branchHeight * 0.88;
         const levelBottom = levelTop + branchHeight * 1.35;
+        const leftX = (width - levelWidth) / 2;
+        const rightX = (width + levelWidth) / 2;
 
-        // Triangular foliage section
-        const points = `
-            ${centerX},${levelTop}
-            ${(width - levelWidth) / 2},${levelBottom}
-            ${(width + levelWidth) / 2},${levelBottom}
-        `;
+        // Create wavy polygon with 7 points for realistic appearance (Option B)
+        const waviness = levelWidth * 0.08; // 8% waviness
+        const midY = (levelTop + levelBottom) / 2;
+
+        // 7-point polygon with natural irregularities
+        const polygonPoints = [
+            `${centerX},${levelTop}`, // Top center
+            `${leftX + levelWidth * 0.15},${levelTop + (levelBottom - levelTop) * 0.35}`, // Upper left with indent
+            `${leftX - waviness},${midY}`, // Mid left bulge
+            `${leftX + levelWidth * 0.1},${levelBottom - (levelBottom - levelTop) * 0.2}`, // Lower left indent
+            `${leftX},${levelBottom}`, // Bottom left
+            `${rightX},${levelBottom}`, // Bottom right
+            `${rightX - levelWidth * 0.1},${levelBottom - (levelBottom - levelTop) * 0.2}`, // Lower right indent
+            `${rightX + waviness},${midY}`, // Mid right bulge
+            `${rightX - levelWidth * 0.15},${levelTop + (levelBottom - levelTop) * 0.35}` // Upper right indent
+        ];
 
         const foliage = document.createElementNS(svgNS, "polygon");
-        foliage.setAttribute("points", points);
+        foliage.setAttribute("points", polygonPoints.join(" "));
         foliage.setAttribute("fill", "url(#branchGradient)");
         foliage.setAttribute("opacity", "0.9");
         foliage.setAttribute("class", `foliage-level-${i}`);
 
         foliageGroup.appendChild(foliage);
 
-        // Store bounds for ornament placement
+        // Option C: Add small branch details (8-12 per level)
+        const branchCount = 8 + Math.floor(i * 0.5); // More branches on lower levels
+        const branchSize = levelWidth * 0.08;
+
+        for (let b = 0; b < branchCount; b++) {
+            const side = b % 2 === 0 ? -1 : 1; // Alternate sides
+            const yPos = levelTop + ((levelBottom - levelTop) / branchCount) * b + (levelBottom - levelTop) * 0.1;
+            const xBase = side === -1 ? leftX : rightX;
+            const xTip = xBase + (side * branchSize * 1.2);
+            const xMid = xBase + (side * branchSize * 0.6);
+
+            // Small triangular branch detail
+            const branchPoints = `
+                ${xBase},${yPos}
+                ${xTip},${yPos + branchSize * 0.4}
+                ${xMid},${yPos + branchSize * 0.8}
+            `;
+
+            const branchDetail = document.createElementNS(svgNS, "polygon");
+            branchDetail.setAttribute("points", branchPoints);
+            branchDetail.setAttribute("fill", "url(#branchGradient)");
+            branchDetail.setAttribute("opacity", "0.85");
+            branchDetail.setAttribute("class", `branch-detail-${i}-${b}`);
+
+            foliageGroup.appendChild(branchDetail);
+        }
+
+        // Store bounds for ornament placement (use original triangle bounds for positioning)
         triangleBounds.push({
             level: i,
             topY: levelTop,
             bottomY: levelBottom,
-            leftX: (width - levelWidth) / 2,
-            rightX: (width + levelWidth) / 2,
+            leftX: leftX,
+            rightX: rightX,
             centerX: centerX,
             width: levelWidth
         });
