@@ -115,58 +115,78 @@ function generateTree(photoCount) {
     trunk.setAttribute("class", "tree-trunk");
     trunk.setAttribute("rx", "3");
 
-    // NEUE ARCHITEKTUR: Radiale Äste vom Stamm
+    // SCHRITT 1: Grüne Füllmasse (Dreiecks-Struktur)
+    const foliageGroup = document.createElementNS(svgNS, "g");
+    foliageGroup.setAttribute("class", "tree-foliage");
+
+    const branchHeight = (height - trunkHeight) / levels;
+
+    for (let i = 0; i < levels; i++) {
+        const levelWidth = width * (0.85 - (i * 0.1));
+        const levelTop = starOffset + i * branchHeight * 0.9;
+        const levelBottom = levelTop + branchHeight * 1.3;
+
+        // Main triangular foliage section
+        const points = `
+            ${centerX},${levelTop}
+            ${(width - levelWidth) / 2},${levelBottom}
+            ${(width + levelWidth) / 2},${levelBottom}
+        `;
+
+        const foliage = document.createElementNS(svgNS, "polygon");
+        foliage.setAttribute("points", points);
+        foliage.setAttribute("fill", "url(#branchGradient)");
+        foliage.setAttribute("opacity", "0.85");
+        foliage.setAttribute("class", `foliage-level-${i}`);
+
+        foliageGroup.appendChild(foliage);
+    }
+
+    // SCHRITT 2: Radiale Äste als Detail darüber
     const branchGroup = document.createElementNS(svgNS, "g");
     branchGroup.setAttribute("class", "tree-branches");
 
     const branchData = []; // Store branch coordinates for ornament placement
-    const trunkTopY = starOffset + height - trunkHeight;
     const availableTreeHeight = height - trunkHeight;
 
-    // Calculate branches per level (more photos = more branches)
-    const branchesPerLevel = Math.min(8 + Math.floor(photoCount / 20), 14);
+    // Fewer but more visible branches
+    const branchesPerLevel = Math.min(6 + Math.floor(photoCount / 30), 10);
 
     // Create branches for each level
     for (let level = 0; level < levels; level++) {
-        // Y position for this level (spiral down the trunk)
         const levelProgress = level / (levels - 1 || 1);
         const levelY = starOffset + (levelProgress * availableTreeHeight * 0.85);
 
         // Branch length grows as we go down
-        const baseBranchLength = width * 0.25;
-        const branchLength = baseBranchLength * (0.5 + levelProgress * 0.5);
+        const baseBranchLength = width * 0.35;
+        const branchLength = baseBranchLength * (0.4 + levelProgress * 0.6);
 
-        // Number of branches at this level (more at bottom)
-        const numBranches = Math.floor(branchesPerLevel * (0.6 + levelProgress * 0.4));
+        // Number of branches at this level
+        const numBranches = Math.floor(branchesPerLevel * (0.5 + levelProgress * 0.5));
 
-        // Create branches spiraling around trunk
         for (let b = 0; b < numBranches; b++) {
-            // Spiral angle (offset each level for natural look)
-            const angleOffset = level * 0.4; // Slight rotation per level
+            const angleOffset = level * 0.5;
             const angle = (b / numBranches) * Math.PI * 2 + angleOffset;
 
-            // Start at trunk center
             const startX = centerX;
             const startY = levelY;
 
-            // End point (radial from center)
             const endX = centerX + Math.cos(angle) * branchLength;
-            const endY = levelY + Math.sin(angle) * branchLength * 0.3; // Slight vertical spread
+            const endY = levelY + Math.sin(angle) * branchLength * 0.2;
 
-            // Control point for bezier curve (makes branch droop down)
-            const controlX = startX + Math.cos(angle) * branchLength * 0.6;
-            const controlY = startY + branchLength * 0.15; // Droop down
+            const controlX = startX + Math.cos(angle) * branchLength * 0.7;
+            const controlY = startY + branchLength * 0.2;
 
-            // Create branch as quadratic bezier path
+            // Create visible branch path
             const branchPath = document.createElementNS(svgNS, "path");
             const d = `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
             branchPath.setAttribute("d", d);
-            branchPath.setAttribute("stroke", "url(#branchGradient)");
-            branchPath.setAttribute("stroke-width", 3 + level * 0.5);
+            branchPath.setAttribute("stroke", "#2D5016");
+            branchPath.setAttribute("stroke-width", 4 + level * 0.8);
             branchPath.setAttribute("fill", "none");
             branchPath.setAttribute("stroke-linecap", "round");
             branchPath.setAttribute("class", `branch branch-level-${level}`);
-            branchPath.setAttribute("opacity", 0.9);
+            branchPath.setAttribute("opacity", "0.7");
 
             branchGroup.appendChild(branchPath);
 
@@ -180,34 +200,6 @@ function generateTree(photoCount) {
                 length: branchLength,
                 angle: angle
             });
-
-            // Add needle details to branch (small green strokes)
-            const needleCount = Math.floor(branchLength / 8);
-            for (let n = 0; n < needleCount; n++) {
-                const t = n / needleCount; // Position along branch (0-1)
-
-                // Point on bezier curve
-                const px = (1-t)*(1-t)*startX + 2*(1-t)*t*controlX + t*t*endX;
-                const py = (1-t)*(1-t)*startY + 2*(1-t)*t*controlY + t*t*endY;
-
-                // Small needle strokes perpendicular to branch
-                const needleAngle = angle + Math.PI / 2;
-                const needleLength = 3 + Math.random() * 3;
-                const needleEndX = px + Math.cos(needleAngle) * needleLength;
-                const needleEndY = py + Math.sin(needleAngle) * needleLength;
-
-                const needle = document.createElementNS(svgNS, "line");
-                needle.setAttribute("x1", px);
-                needle.setAttribute("y1", py);
-                needle.setAttribute("x2", needleEndX);
-                needle.setAttribute("y2", needleEndY);
-                needle.setAttribute("stroke", "#4A7C28");
-                needle.setAttribute("stroke-width", 1);
-                needle.setAttribute("opacity", 0.6);
-                needle.setAttribute("class", "tree-needle");
-
-                branchGroup.appendChild(needle);
-            }
         }
     }
 
@@ -225,9 +217,11 @@ function generateTree(photoCount) {
     star.setAttribute("fill", "#FFD700");
     star.setAttribute("class", "tree-star");
 
-    svg.appendChild(branchGroup);
-    svg.appendChild(trunk);
-    svg.appendChild(star);
+    // Append in correct order (back to front)
+    svg.appendChild(trunk);          // 1. Trunk (back)
+    svg.appendChild(foliageGroup);   // 2. Green foliage mass
+    svg.appendChild(branchGroup);    // 3. Detail branches on top
+    svg.appendChild(star);           // 4. Star (front)
 
     // Store branch data in SVG for later access
     svg.branchData = branchData;
