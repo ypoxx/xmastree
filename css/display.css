@@ -167,12 +167,11 @@ main {
 /* SVG Ornaments */
 .ornament {
     cursor: pointer;
-    transition: transform 0.3s ease;
+    transition: filter 0.3s ease;
 }
 
 .ornament:hover {
-    transform: scale(1.1);
-    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8));
 }
 
 .ornament-new {

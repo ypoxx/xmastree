@@ -124,7 +124,8 @@ function generateTree(photoCount, photoData = [], positions = []) {
     const triangleBounds = []; // Store triangle bounds for ornament placement
 
     for (let i = 0; i < levels; i++) {
-        const levelWidth = width * (0.88 - (i * 0.09));
+        // CRITICAL: Width INCREASES from top (i=0) to bottom (i=6)
+        const levelWidth = width * (0.15 + (i * 0.11)); // Top: 0.15*width, Bottom: 0.92*width
         const levelTop = starOffset + i * branchHeight * 0.88;
         const levelBottom = levelTop + branchHeight * 1.35;
 
@@ -261,7 +262,7 @@ function generateTree(photoCount, photoData = [], positions = []) {
 function generatePhotoPositions(photoCount, triangleBounds, seed) {
     const rng = seededRandom(seed);
     const positions = [];
-    const ornamentRadius = 25; // Base radius
+    const ornamentRadius = 15; // Base radius - reduced for better proportions
     const maxAttempts = 100;
 
     if (!triangleBounds || triangleBounds.length === 0) {
