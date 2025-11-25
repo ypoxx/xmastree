@@ -60,15 +60,15 @@ function generateTree(photoCount, photoData = [], positions = []) {
 
     const bStop1 = document.createElementNS(svgNS, "stop");
     bStop1.setAttribute("offset", "0%");
-    bStop1.setAttribute("style", "stop-color:#2D5016;stop-opacity:1");
+    bStop1.setAttribute("style", "stop-color:#b0005e;stop-opacity:1"); // Dark Telekom Magenta
 
     const bStop2 = document.createElementNS(svgNS, "stop");
     bStop2.setAttribute("offset", "50%");
-    bStop2.setAttribute("style", "stop-color:#3D6B1F;stop-opacity:1");
+    bStop2.setAttribute("style", "stop-color:#e20074;stop-opacity:1"); // Telekom Magenta
 
     const bStop3 = document.createElementNS(svgNS, "stop");
     bStop3.setAttribute("offset", "100%");
-    bStop3.setAttribute("style", "stop-color:#4A7C28;stop-opacity:1");
+    bStop3.setAttribute("style", "stop-color:#ff1a8c;stop-opacity:1"); // Light Telekom Magenta
 
     branchGradient.appendChild(bStop1);
     branchGradient.appendChild(bStop2);
@@ -85,15 +85,15 @@ function generateTree(photoCount, photoData = [], positions = []) {
 
     const trunkStop1 = document.createElementNS(svgNS, "stop");
     trunkStop1.setAttribute("offset", "0%");
-    trunkStop1.setAttribute("style", "stop-color:#3d2817;stop-opacity:1");
+    trunkStop1.setAttribute("style", "stop-color:#1a1a1a;stop-opacity:1"); // Telekom Dark
 
     const trunkStop2 = document.createElementNS(svgNS, "stop");
     trunkStop2.setAttribute("offset", "50%");
-    trunkStop2.setAttribute("style", "stop-color:#4A3728;stop-opacity:1");
+    trunkStop2.setAttribute("style", "stop-color:#262626;stop-opacity:1"); // Telekom Gray
 
     const trunkStop3 = document.createElementNS(svgNS, "stop");
     trunkStop3.setAttribute("offset", "100%");
-    trunkStop3.setAttribute("style", "stop-color:#5d4a3a;stop-opacity:1");
+    trunkStop3.setAttribute("style", "stop-color:#404040;stop-opacity:1"); // Telekom Light Gray
 
     trunkGradient.appendChild(trunkStop1);
     trunkGradient.appendChild(trunkStop2);
@@ -206,7 +206,7 @@ function generateTree(photoCount, photoData = [], positions = []) {
         starPoints.push(`${x},${y}`);
     }
     star.setAttribute("points", starPoints.join(" "));
-    star.setAttribute("fill", "#FFD700");
+    star.setAttribute("fill", "#ffffff"); // Telekom White
     star.setAttribute("class", "tree-star");
 
     // Create clipPaths for round ornaments
@@ -263,13 +263,13 @@ function generateTree(photoCount, photoData = [], positions = []) {
         image.setAttribute("class", "ornament-image");
         ornamentGroup.appendChild(image);
 
-        // Border circle (gold/silver alternating)
+        // Border circle (magenta/white alternating - Telekom branding)
         const border = document.createElementNS(svgNS, "circle");
         border.setAttribute("cx", pos.radius);
         border.setAttribute("cy", pos.radius);
         border.setAttribute("r", pos.radius);
         border.setAttribute("fill", "none");
-        border.setAttribute("stroke", index % 2 === 0 ? "#FFD700" : "#C0C0C0");
+        border.setAttribute("stroke", index % 2 === 0 ? "#e20074" : "#ffffff"); // Telekom Magenta/White
         border.setAttribute("stroke-width", "3");
         border.setAttribute("class", "ornament-border");
         ornamentGroup.appendChild(border);
