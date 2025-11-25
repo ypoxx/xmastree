@@ -96,7 +96,6 @@ function generateTree(photoCount) {
     svg.appendChild(defs);
 
     // Create tree trunk (offset by starOffset)
-    const starOffset = 40;
     const trunkWidth = width * 0.1;
     const trunkHeight = height * 0.15;
     const trunk = document.createElementNS(svgNS, "rect");
