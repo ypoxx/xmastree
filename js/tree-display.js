@@ -62,28 +62,47 @@ async function loadAndRenderTree() {
 }
 
 /**
- * Load photo data from JSON file (primary source) with localStorage fallback
- * Always prefer photos.json to ensure consistency across all devices
+ * Load photo data from API (live from GitHub) with fallbacks
+ * Always loads latest data directly from GitHub via Netlify Function
  * @returns {Promise<Object>} Photo data
  */
 async function loadPhotoData() {
-    // Try to load from JSON file (PRIMARY SOURCE)
+    // PRIMARY: Try to load from API endpoint (live from GitHub)
     try {
-        const response = await fetch('./data/photos.json?t=' + Date.now());
+        const response = await fetch('/api/photos?t=' + Date.now(), {
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
         if (response.ok) {
-            const jsonData = await response.json();
-            console.log('✓ Loaded from photos.json:', jsonData.metadata.totalCount, 'photos');
+            const apiData = await response.json();
+            console.log('✓ Loaded from API (GitHub):', apiData.metadata.totalCount, 'photos');
 
             // Clear localStorage to avoid confusion
             localStorage.removeItem('treePhotoData');
 
+            return apiData;
+        } else {
+            console.warn('API returned', response.status, '- trying fallback');
+        }
+    } catch (error) {
+        console.log('Could not load from API:', error.message, '- trying fallback');
+    }
+
+    // FALLBACK 1: Try static JSON file (for local development)
+    try {
+        const response = await fetch('./data/photos.json?t=' + Date.now());
+        if (response.ok) {
+            const jsonData = await response.json();
+            console.log('✓ Loaded from static photos.json:', jsonData.metadata.totalCount, 'photos');
+            localStorage.removeItem('treePhotoData');
             return jsonData;
         }
     } catch (error) {
         console.log('Could not load from JSON file:', error.message);
     }
 
-    // Fallback: localStorage (only for local development)
+    // FALLBACK 2: localStorage (local development only)
     try {
         const stored = localStorage.getItem('treePhotoData');
         if (stored) {
