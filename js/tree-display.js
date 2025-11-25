@@ -142,13 +142,38 @@ function renderTree(photoData, isNewPhoto = false) {
     const treeHeight = calculateTreeHeight(photoCount);
     const treeWidth = treeHeight * 0.6;
 
-    // Generate tree SVG
+    // Generate tree SVG (now returns object with branch data)
     const treeSVG = generateTree(photoCount);
     container.appendChild(treeSVG);
 
-    // Generate photo positions using today's seed
+    // Get branch data from SVG
+    const branchData = treeSVG.branchData || [];
+
+    // Generate photo positions using today's seed and BRANCH DATA
     const seed = getTodaySeed();
-    const positions = generatePhotoPositions(photoCount, treeHeight, treeWidth, seed);
+    const positions = generatePhotoPositions(photoCount, branchData, seed);
+
+    // Create SVG group for hanging strings (must be in SVG coordinate space)
+    const svgNS = "http://www.w3.org/2000/svg";
+    const stringsGroup = document.createElementNS(svgNS, "g");
+    stringsGroup.setAttribute("class", "ornament-strings");
+
+    // Draw hanging strings for each ornament
+    positions.forEach((pos, index) => {
+        // String from branch attachment point to ornament center
+        const string = document.createElementNS(svgNS, "line");
+        string.setAttribute("x1", pos.hangX);
+        string.setAttribute("y1", pos.hangY);
+        string.setAttribute("x2", pos.x);
+        string.setAttribute("y2", pos.y);
+        string.setAttribute("stroke", "rgba(139, 69, 19, 0.6)");
+        string.setAttribute("stroke-width", "1");
+        string.setAttribute("class", "ornament-string");
+        stringsGroup.appendChild(string);
+    });
+
+    // Add strings to SVG (before ornaments so they appear behind)
+    treeSVG.appendChild(stringsGroup);
 
     // Create photo ornaments
     const ornamentsContainer = document.createElement('div');
@@ -179,7 +204,7 @@ function renderTree(photoData, isNewPhoto = false) {
 /**
  * Create a photo ornament element
  * @param {Object} photo - Photo data
- * @param {Object} position - Position data {x, y, rotation, radius}
+ * @param {Object} position - Position data {x, y, rotation, radius, hangX, hangY}
  * @param {number} index - Photo index
  * @param {boolean} isNew - Whether this is a newly added photo
  * @returns {HTMLElement} Ornament element
@@ -195,16 +220,19 @@ function createOrnament(photo, position, index, isNew = false) {
     const photoCount = currentPhotoData.photos.length;
     const treeHeight = calculateTreeHeight(photoCount);
     const treeWidth = treeHeight * 0.6;
+    const starOffset = 40;
+    const totalHeight = treeHeight + starOffset + 50;
 
-    // Position relative to tree dimensions (add star offset)
-    const starOffset = 40; // Space for star at top
+    // Position.x and position.y are already in SVG coordinate space
+    // Convert to percentage of total SVG viewBox
     const leftPercent = (position.x / treeWidth) * 100;
-    const topPercent = ((position.y + starOffset) / (treeHeight + starOffset)) * 100;
+    const topPercent = (position.y / totalHeight) * 100;
 
     ornament.style.left = `${leftPercent}%`;
     ornament.style.top = `${topPercent}%`;
     ornament.style.transform = `translate(-50%, -50%) rotate(${position.rotation}deg)`;
     ornament.style.setProperty('--rotation', `${position.rotation}deg`);
+    ornament.style.setProperty('--i', index);
     ornament.style.width = `${position.radius * 2}px`;
     ornament.style.height = `${position.radius * 2}px`;
 

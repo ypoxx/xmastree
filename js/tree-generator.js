@@ -27,9 +27,9 @@ function getBranchLevels(photoCount) {
 }
 
 /**
- * Generate SVG Christmas tree
+ * Generate SVG Christmas tree with radial branches
  * @param {number} photoCount - Number of photos to determine tree size
- * @returns {string} SVG markup for the tree
+ * @returns {Object} { svg: SVGElement, branches: Array of branch data }
  */
 function generateTree(photoCount) {
     const height = calculateTreeHeight(photoCount);
@@ -49,78 +49,30 @@ function generateTree(photoCount) {
     // Create defs for filters and gradients
     const defs = document.createElementNS(svgNS, "defs");
 
-    // Main gradient for tree (depth effect)
-    const gradient = document.createElementNS(svgNS, "linearGradient");
-    gradient.setAttribute("id", "treeGradient");
-    gradient.setAttribute("x1", "0%");
-    gradient.setAttribute("y1", "0%");
-    gradient.setAttribute("x2", "100%");
-    gradient.setAttribute("y2", "0%");
+    // Main gradient for branches
+    const branchGradient = document.createElementNS(svgNS, "linearGradient");
+    branchGradient.setAttribute("id", "branchGradient");
+    branchGradient.setAttribute("x1", "0%");
+    branchGradient.setAttribute("y1", "0%");
+    branchGradient.setAttribute("x2", "100%");
+    branchGradient.setAttribute("y2", "0%");
 
-    const stop1 = document.createElementNS(svgNS, "stop");
-    stop1.setAttribute("offset", "0%");
-    stop1.setAttribute("style", "stop-color:#1a3d0f;stop-opacity:1");
+    const bStop1 = document.createElementNS(svgNS, "stop");
+    bStop1.setAttribute("offset", "0%");
+    bStop1.setAttribute("style", "stop-color:#2D5016;stop-opacity:1");
 
-    const stop2 = document.createElementNS(svgNS, "stop");
-    stop2.setAttribute("offset", "30%");
-    stop2.setAttribute("style", "stop-color:#2D5016;stop-opacity:1");
+    const bStop2 = document.createElementNS(svgNS, "stop");
+    bStop2.setAttribute("offset", "50%");
+    bStop2.setAttribute("style", "stop-color:#3D6B1F;stop-opacity:1");
 
-    const stop3 = document.createElementNS(svgNS, "stop");
-    stop3.setAttribute("offset", "50%");
-    stop3.setAttribute("style", "stop-color:#3D6B1F;stop-opacity:1");
+    const bStop3 = document.createElementNS(svgNS, "stop");
+    bStop3.setAttribute("offset", "100%");
+    bStop3.setAttribute("style", "stop-color:#4A7C28;stop-opacity:1");
 
-    const stop4 = document.createElementNS(svgNS, "stop");
-    stop4.setAttribute("offset", "70%");
-    stop4.setAttribute("style", "stop-color:#4A7C28;stop-opacity:1");
-
-    const stop5 = document.createElementNS(svgNS, "stop");
-    stop5.setAttribute("offset", "100%");
-    stop5.setAttribute("style", "stop-color:#5a8c35;stop-opacity:1");
-
-    gradient.appendChild(stop1);
-    gradient.appendChild(stop2);
-    gradient.appendChild(stop3);
-    gradient.appendChild(stop4);
-    gradient.appendChild(stop5);
-    defs.appendChild(gradient);
-
-    // Shadow gradient
-    const shadowGradient = document.createElementNS(svgNS, "radialGradient");
-    shadowGradient.setAttribute("id", "treeShadow");
-    const shadowStop1 = document.createElementNS(svgNS, "stop");
-    shadowStop1.setAttribute("offset", "0%");
-    shadowStop1.setAttribute("style", "stop-color:#000000;stop-opacity:0.3");
-    const shadowStop2 = document.createElementNS(svgNS, "stop");
-    shadowStop2.setAttribute("offset", "100%");
-    shadowStop2.setAttribute("style", "stop-color:#000000;stop-opacity:0");
-    shadowGradient.appendChild(shadowStop1);
-    shadowGradient.appendChild(shadowStop2);
-    defs.appendChild(shadowGradient);
-
-    // Glitter filter for ornaments
-    const filter = document.createElementNS(svgNS, "filter");
-    filter.setAttribute("id", "glitter");
-
-    const feTurbulence = document.createElementNS(svgNS, "feTurbulence");
-    feTurbulence.setAttribute("type", "fractalNoise");
-    feTurbulence.setAttribute("baseFrequency", "0.9");
-    feTurbulence.setAttribute("numOctaves", "3");
-    feTurbulence.setAttribute("result", "noise");
-
-    const feDisplacementMap = document.createElementNS(svgNS, "feDisplacementMap");
-    feDisplacementMap.setAttribute("in", "SourceGraphic");
-    feDisplacementMap.setAttribute("in2", "noise");
-    feDisplacementMap.setAttribute("scale", "2");
-
-    filter.appendChild(feTurbulence);
-    filter.appendChild(feDisplacementMap);
-    defs.appendChild(filter);
-
-    svg.appendChild(defs);
-
-    // Create tree trunk with gradient (offset by starOffset)
-    const trunkWidth = width * 0.12;
-    const trunkHeight = height * 0.15;
+    branchGradient.appendChild(bStop1);
+    branchGradient.appendChild(bStop2);
+    branchGradient.appendChild(bStop3);
+    defs.appendChild(branchGradient);
 
     // Trunk gradient
     const trunkGradient = document.createElementNS(svgNS, "linearGradient");
@@ -147,8 +99,15 @@ function generateTree(photoCount) {
     trunkGradient.appendChild(trunkStop3);
     defs.appendChild(trunkGradient);
 
+    svg.appendChild(defs);
+
+    // Create tree trunk (central vertical line)
+    const trunkWidth = width * 0.08;
+    const trunkHeight = height * 0.15;
+    const centerX = width / 2;
+
     const trunk = document.createElementNS(svgNS, "rect");
-    trunk.setAttribute("x", (width - trunkWidth) / 2);
+    trunk.setAttribute("x", centerX - trunkWidth / 2);
     trunk.setAttribute("y", starOffset + height - trunkHeight);
     trunk.setAttribute("width", trunkWidth);
     trunk.setAttribute("height", trunkHeight);
@@ -156,80 +115,110 @@ function generateTree(photoCount) {
     trunk.setAttribute("class", "tree-trunk");
     trunk.setAttribute("rx", "3");
 
-    // Create tree branches (realistic multi-layered branches, offset by starOffset)
+    // NEUE ARCHITEKTUR: Radiale Äste vom Stamm
     const branchGroup = document.createElementNS(svgNS, "g");
     branchGroup.setAttribute("class", "tree-branches");
 
-    const branchHeight = (height - trunkHeight) / levels;
+    const branchData = []; // Store branch coordinates for ornament placement
+    const trunkTopY = starOffset + height - trunkHeight;
+    const availableTreeHeight = height - trunkHeight;
 
-    // Create multiple branch segments per level for realistic look
-    for (let i = 0; i < levels; i++) {
-        const levelWidth = width * (0.9 - (i * 0.08));
-        const levelTop = starOffset + i * branchHeight * 0.85;
-        const levelBottom = levelTop + branchHeight * 1.2;
-        const levelMid = levelTop + branchHeight * 0.6;
+    // Calculate branches per level (more photos = more branches)
+    const branchesPerLevel = Math.min(8 + Math.floor(photoCount / 20), 14);
 
-        // Create 3 overlapping branch layers per level for depth
-        const branchLayers = 3;
+    // Create branches for each level
+    for (let level = 0; level < levels; level++) {
+        // Y position for this level (spiral down the trunk)
+        const levelProgress = level / (levels - 1 || 1);
+        const levelY = starOffset + (levelProgress * availableTreeHeight * 0.85);
 
-        for (let layer = 0; layer < branchLayers; layer++) {
-            const layerOffset = layer * 8; // Offset each layer slightly
-            const layerWidth = levelWidth - layerOffset;
-            const layerTop = levelTop + layerOffset;
+        // Branch length grows as we go down
+        const baseBranchLength = width * 0.25;
+        const branchLength = baseBranchLength * (0.5 + levelProgress * 0.5);
 
-            // Main branch triangle with slightly jagged edges
-            const points = `
-                ${width / 2},${layerTop}
-                ${(width - layerWidth) / 2},${levelBottom}
-                ${(width + layerWidth) / 2},${levelBottom}
-            `;
+        // Number of branches at this level (more at bottom)
+        const numBranches = Math.floor(branchesPerLevel * (0.6 + levelProgress * 0.4));
 
-            const branch = document.createElementNS(svgNS, "polygon");
-            branch.setAttribute("points", points);
+        // Create branches spiraling around trunk
+        for (let b = 0; b < numBranches; b++) {
+            // Spiral angle (offset each level for natural look)
+            const angleOffset = level * 0.4; // Slight rotation per level
+            const angle = (b / numBranches) * Math.PI * 2 + angleOffset;
 
-            // Vary opacity for depth effect
-            const opacity = 1 - (layer * 0.15);
-            branch.setAttribute("fill", "url(#treeGradient)");
-            branch.setAttribute("opacity", opacity);
-            branch.setAttribute("class", `branch-level-${i} branch-layer-${layer}`);
-            branch.setAttribute("data-level", i);
+            // Start at trunk center
+            const startX = centerX;
+            const startY = levelY;
 
-            branchGroup.appendChild(branch);
-        }
+            // End point (radial from center)
+            const endX = centerX + Math.cos(angle) * branchLength;
+            const endY = levelY + Math.sin(angle) * branchLength * 0.3; // Slight vertical spread
 
-        // Add individual branch tips for detail (5-7 tips per level)
-        const numTips = 5 + (i % 3); // Vary between 5-7
-        for (let tip = 0; tip < numTips; tip++) {
-            const tipAngle = (tip / numTips) * Math.PI; // Spread across 180 degrees
-            const tipX = width / 2 + Math.cos(tipAngle - Math.PI / 2) * levelWidth * 0.4;
-            const tipY = levelMid + Math.sin(tipAngle * 0.5) * branchHeight * 0.3;
-            const tipSize = 15 + (i * 3); // Tips get bigger as tree gets wider
+            // Control point for bezier curve (makes branch droop down)
+            const controlX = startX + Math.cos(angle) * branchLength * 0.6;
+            const controlY = startY + branchLength * 0.15; // Droop down
 
-            // Small triangular branch tip
-            const tipPoints = `
-                ${tipX},${tipY - tipSize}
-                ${tipX - tipSize * 0.7},${tipY + tipSize * 0.5}
-                ${tipX + tipSize * 0.7},${tipY + tipSize * 0.5}
-            `;
+            // Create branch as quadratic bezier path
+            const branchPath = document.createElementNS(svgNS, "path");
+            const d = `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
+            branchPath.setAttribute("d", d);
+            branchPath.setAttribute("stroke", "url(#branchGradient)");
+            branchPath.setAttribute("stroke-width", 3 + level * 0.5);
+            branchPath.setAttribute("fill", "none");
+            branchPath.setAttribute("stroke-linecap", "round");
+            branchPath.setAttribute("class", `branch branch-level-${level}`);
+            branchPath.setAttribute("opacity", 0.9);
 
-            const branchTip = document.createElementNS(svgNS, "polygon");
-            branchTip.setAttribute("points", tipPoints);
-            branchTip.setAttribute("fill", "url(#treeGradient)");
-            branchTip.setAttribute("opacity", "0.8");
-            branchTip.setAttribute("class", `branch-tip branch-level-${i}`);
+            branchGroup.appendChild(branchPath);
 
-            branchGroup.appendChild(branchTip);
+            // Store branch data for ornament placement
+            branchData.push({
+                id: `${level}-${b}`,
+                level: level,
+                startX, startY,
+                endX, endY,
+                controlX, controlY,
+                length: branchLength,
+                angle: angle
+            });
+
+            // Add needle details to branch (small green strokes)
+            const needleCount = Math.floor(branchLength / 8);
+            for (let n = 0; n < needleCount; n++) {
+                const t = n / needleCount; // Position along branch (0-1)
+
+                // Point on bezier curve
+                const px = (1-t)*(1-t)*startX + 2*(1-t)*t*controlX + t*t*endX;
+                const py = (1-t)*(1-t)*startY + 2*(1-t)*t*controlY + t*t*endY;
+
+                // Small needle strokes perpendicular to branch
+                const needleAngle = angle + Math.PI / 2;
+                const needleLength = 3 + Math.random() * 3;
+                const needleEndX = px + Math.cos(needleAngle) * needleLength;
+                const needleEndY = py + Math.sin(needleAngle) * needleLength;
+
+                const needle = document.createElementNS(svgNS, "line");
+                needle.setAttribute("x1", px);
+                needle.setAttribute("y1", py);
+                needle.setAttribute("x2", needleEndX);
+                needle.setAttribute("y2", needleEndY);
+                needle.setAttribute("stroke", "#4A7C28");
+                needle.setAttribute("stroke-width", 1);
+                needle.setAttribute("opacity", 0.6);
+                needle.setAttribute("class", "tree-needle");
+
+                branchGroup.appendChild(needle);
+            }
         }
     }
 
-    // Create star on top (positioned at top of viewBox)
+    // Create star on top
     const star = document.createElementNS(svgNS, "polygon");
     const starSize = 25;
     const starPoints = [];
     for (let i = 0; i < 5; i++) {
         const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
-        const x = width / 2 + Math.cos(angle) * starSize;
-        const y = 20 + Math.sin(angle) * starSize; // Positioned at top with some padding
+        const x = centerX + Math.cos(angle) * starSize;
+        const y = 20 + Math.sin(angle) * starSize;
         starPoints.push(`${x},${y}`);
     }
     star.setAttribute("points", starPoints.join(" "));
@@ -240,90 +229,80 @@ function generateTree(photoCount) {
     svg.appendChild(trunk);
     svg.appendChild(star);
 
+    // Store branch data in SVG for later access
+    svg.branchData = branchData;
+
     return svg;
 }
 
 /**
- * Generate photo positions on the tree
+ * Generate photo positions along tree branches
  * Uses seeded random to ensure consistent positions for all viewers
+ * CRITICAL: Ornaments are placed ALONG branches, not randomly in space!
  * @param {number} photoCount - Number of photos
- * @param {number} treeHeight - Height of the tree
- * @param {number} treeWidth - Width of the tree
+ * @param {Array} branchData - Array of branch objects with coordinates
  * @param {number} seed - Seed for random number generator
- * @returns {Array} Array of position objects {x, y, rotation, size}
+ * @returns {Array} Array of position objects {x, y, rotation, size, branchId, hangX, hangY}
  */
-function generatePhotoPositions(photoCount, treeHeight, treeWidth, seed) {
+function generatePhotoPositions(photoCount, branchData, seed) {
     const rng = seededRandom(seed);
     const positions = [];
     const ornamentRadius = 25; // Base radius
-    const maxAttempts = 100;
 
-    const starOffset = 40; // IMPORTANT: Account for star offset at top
-    const trunkHeight = treeHeight * 0.15;
-    const availableHeight = treeHeight - trunkHeight;
+    if (!branchData || branchData.length === 0) {
+        console.error('No branch data available for positioning!');
+        return positions;
+    }
 
+    // Distribute photos across branches
     for (let i = 0; i < photoCount; i++) {
-        let attempts = 0;
-        let validPosition = null;
+        // Select a random branch (seeded)
+        const branchIndex = Math.floor(rng() * branchData.length);
+        const branch = branchData[branchIndex];
 
-        while (attempts < maxAttempts && !validPosition) {
-            // Random position within tree bounds (0 = top, 1 = bottom)
-            const yProgress = rng();
-            // Position within available tree area, adding starOffset to account for star space
-            const y = starOffset + (yProgress * availableHeight);
+        // Position along branch (0 = start at trunk, 1 = end of branch)
+        // Prefer positions 0.4-0.9 along branch (not too close to trunk, not at very tip)
+        const t = 0.4 + rng() * 0.5;
 
-            // Calculate tree width at this height (triangular shape, narrower at top)
-            // At top (yProgress=0): narrower, At bottom (yProgress=1): wider
-            const widthAtHeight = treeWidth * (0.2 + yProgress * 0.7); // Start at 20% width, grow to 90%
-            const centerX = treeWidth / 2;
-            // Keep ornaments well within tree bounds (0.7 factor for safety margin)
-            const xOffset = (rng() - 0.5) * widthAtHeight * 0.7;
-            const x = centerX + xOffset;
+        // Calculate point on bezier curve: P(t) = (1-t)²P₀ + 2(1-t)tP₁ + t²P₂
+        const x = (1-t)*(1-t)*branch.startX + 2*(1-t)*t*branch.controlX + t*t*branch.endX;
+        const y = (1-t)*(1-t)*branch.startY + 2*(1-t)*t*branch.controlY + t*t*branch.endY;
 
-            // Random rotation
-            const rotation = (rng() - 0.5) * 10; // -5° to +5°
+        // Ornament hangs DOWN from the branch
+        const hangDistance = 5 + ornamentRadius; // String length + ornament radius
+        const ornamentY = y + hangDistance;
 
-            // Random size variation
-            const size = ornamentRadius + (rng() - 0.5) * 10; // ±5px variation
+        // Random rotation
+        const rotation = (rng() - 0.5) * 15; // -7.5° to +7.5° for swing
 
-            const newPosition = { x, y, rotation, radius: size };
+        // Random size variation
+        const size = ornamentRadius + (rng() - 0.5) * 8; // ±4px variation
 
-            // Check collision with existing positions
-            let hasCollision = false;
-            for (const pos of positions) {
-                if (circlesCollide(newPosition, pos, 10)) {
-                    hasCollision = true;
-                    break;
-                }
-            }
-
-            if (!hasCollision) {
-                validPosition = newPosition;
-            }
-
-            attempts++;
-        }
-
-        // If we couldn't find a valid position, use fallback
-        if (validPosition) {
-            positions.push(validPosition);
-        } else {
-            // Fallback: place in spiral pattern, accounting for starOffset
-            const yProgress = (i / photoCount);
-            const widthAtHeight = treeWidth * (0.2 + yProgress * 0.7);
-            const angle = i * 2.4;
-            const spiralRadius = Math.min((i % 10) * 15, widthAtHeight * 0.3);
-
-            positions.push({
-                x: treeWidth / 2 + Math.cos(angle) * spiralRadius,
-                y: starOffset + (yProgress * availableHeight),
-                rotation: (rng() - 0.5) * 10,
-                radius: ornamentRadius
-            });
-        }
+        positions.push({
+            x: x,              // Ornament X position
+            y: ornamentY,      // Ornament Y position (below branch)
+            hangX: x,          // Where string attaches to branch
+            hangY: y,          // Where string attaches to branch
+            rotation: rotation,
+            radius: size,
+            branchId: branch.id,
+            branchLevel: branch.level
+        });
     }
 
     return positions;
+}
+
+/**
+ * Helper: Calculate point on quadratic bezier curve
+ * @param {number} t - Parameter (0-1)
+ * @param {Object} branch - Branch with startX, startY, controlX, controlY, endX, endY
+ * @returns {Object} {x, y}
+ */
+function getPointOnBranch(t, branch) {
+    const x = (1-t)*(1-t)*branch.startX + 2*(1-t)*t*branch.controlX + t*t*branch.endX;
+    const y = (1-t)*(1-t)*branch.startY + 2*(1-t)*t*branch.controlY + t*t*branch.endY;
+    return { x, y };
 }
 
 /**

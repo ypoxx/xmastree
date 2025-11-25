@@ -125,6 +125,20 @@ main {
     animation: starGlow 2s ease-in-out infinite;
 }
 
+/* Branch styles */
+.branch {
+    transition: stroke-width 0.3s ease;
+}
+
+.tree-needle {
+    opacity: 0.5;
+}
+
+/* Ornament hanging strings */
+.ornament-string {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
 @keyframes starGlow {
     0%, 100% { filter: drop-shadow(0 0 10px #FFD700); }
     50% { filter: drop-shadow(0 0 20px #FFD700) drop-shadow(0 0 30px #FFD700); }
@@ -163,18 +177,7 @@ main {
     animation: ornamentSwing 4s ease-in-out infinite;
     animation-delay: calc(var(--i, 0) * 0.1s);
     filter: brightness(1.05);
-}
-
-.ornament::before {
-    content: '';
-    position: absolute;
-    top: -5px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 2px;
-    height: 8px;
-    background: linear-gradient(to bottom, rgba(139, 69, 19, 0.8), transparent);
-    z-index: 10;
+    pointer-events: auto;
 }
 
 .ornament:hover {
