@@ -156,30 +156,70 @@ function generateTree(photoCount) {
     trunk.setAttribute("class", "tree-trunk");
     trunk.setAttribute("rx", "3");
 
-    // Create tree branches (triangular sections, offset by starOffset)
+    // Create tree branches (realistic multi-layered branches, offset by starOffset)
     const branchGroup = document.createElementNS(svgNS, "g");
     branchGroup.setAttribute("class", "tree-branches");
 
     const branchHeight = (height - trunkHeight) / levels;
 
+    // Create multiple branch segments per level for realistic look
     for (let i = 0; i < levels; i++) {
         const levelWidth = width * (0.9 - (i * 0.08));
         const levelTop = starOffset + i * branchHeight * 0.85;
         const levelBottom = levelTop + branchHeight * 1.2;
+        const levelMid = levelTop + branchHeight * 0.6;
 
-        const points = `
-            ${width / 2},${levelTop}
-            ${(width - levelWidth) / 2},${levelBottom}
-            ${(width + levelWidth) / 2},${levelBottom}
-        `;
+        // Create 3 overlapping branch layers per level for depth
+        const branchLayers = 3;
 
-        const branch = document.createElementNS(svgNS, "polygon");
-        branch.setAttribute("points", points);
-        branch.setAttribute("fill", "url(#treeGradient)");
-        branch.setAttribute("class", `branch-level-${i}`);
-        branch.setAttribute("data-level", i);
+        for (let layer = 0; layer < branchLayers; layer++) {
+            const layerOffset = layer * 8; // Offset each layer slightly
+            const layerWidth = levelWidth - layerOffset;
+            const layerTop = levelTop + layerOffset;
 
-        branchGroup.appendChild(branch);
+            // Main branch triangle with slightly jagged edges
+            const points = `
+                ${width / 2},${layerTop}
+                ${(width - layerWidth) / 2},${levelBottom}
+                ${(width + layerWidth) / 2},${levelBottom}
+            `;
+
+            const branch = document.createElementNS(svgNS, "polygon");
+            branch.setAttribute("points", points);
+
+            // Vary opacity for depth effect
+            const opacity = 1 - (layer * 0.15);
+            branch.setAttribute("fill", "url(#treeGradient)");
+            branch.setAttribute("opacity", opacity);
+            branch.setAttribute("class", `branch-level-${i} branch-layer-${layer}`);
+            branch.setAttribute("data-level", i);
+
+            branchGroup.appendChild(branch);
+        }
+
+        // Add individual branch tips for detail (5-7 tips per level)
+        const numTips = 5 + (i % 3); // Vary between 5-7
+        for (let tip = 0; tip < numTips; tip++) {
+            const tipAngle = (tip / numTips) * Math.PI; // Spread across 180 degrees
+            const tipX = width / 2 + Math.cos(tipAngle - Math.PI / 2) * levelWidth * 0.4;
+            const tipY = levelMid + Math.sin(tipAngle * 0.5) * branchHeight * 0.3;
+            const tipSize = 15 + (i * 3); // Tips get bigger as tree gets wider
+
+            // Small triangular branch tip
+            const tipPoints = `
+                ${tipX},${tipY - tipSize}
+                ${tipX - tipSize * 0.7},${tipY + tipSize * 0.5}
+                ${tipX + tipSize * 0.7},${tipY + tipSize * 0.5}
+            `;
+
+            const branchTip = document.createElementNS(svgNS, "polygon");
+            branchTip.setAttribute("points", tipPoints);
+            branchTip.setAttribute("fill", "url(#treeGradient)");
+            branchTip.setAttribute("opacity", "0.8");
+            branchTip.setAttribute("class", `branch-tip branch-level-${i}`);
+
+            branchGroup.appendChild(branchTip);
+        }
     }
 
     // Create star on top (positioned at top of viewBox)
@@ -218,6 +258,7 @@ function generatePhotoPositions(photoCount, treeHeight, treeWidth, seed) {
     const ornamentRadius = 25; // Base radius
     const maxAttempts = 100;
 
+    const starOffset = 40; // IMPORTANT: Account for star offset at top
     const trunkHeight = treeHeight * 0.15;
     const availableHeight = treeHeight - trunkHeight;
 
@@ -226,14 +267,17 @@ function generatePhotoPositions(photoCount, treeHeight, treeWidth, seed) {
         let validPosition = null;
 
         while (attempts < maxAttempts && !validPosition) {
-            // Random position within tree bounds
+            // Random position within tree bounds (0 = top, 1 = bottom)
             const yProgress = rng();
-            const y = yProgress * availableHeight;
+            // Position within available tree area, adding starOffset to account for star space
+            const y = starOffset + (yProgress * availableHeight);
 
-            // Calculate tree width at this height (triangle shape)
-            const widthAtHeight = treeWidth * (1 - yProgress * 0.7);
+            // Calculate tree width at this height (triangular shape, narrower at top)
+            // At top (yProgress=0): narrower, At bottom (yProgress=1): wider
+            const widthAtHeight = treeWidth * (0.2 + yProgress * 0.7); // Start at 20% width, grow to 90%
             const centerX = treeWidth / 2;
-            const xOffset = (rng() - 0.5) * widthAtHeight * 0.8;
+            // Keep ornaments well within tree bounds (0.7 factor for safety margin)
+            const xOffset = (rng() - 0.5) * widthAtHeight * 0.7;
             const x = centerX + xOffset;
 
             // Random rotation
@@ -260,16 +304,19 @@ function generatePhotoPositions(photoCount, treeHeight, treeWidth, seed) {
             attempts++;
         }
 
-        // If we couldn't find a valid position, just place it anyway
+        // If we couldn't find a valid position, use fallback
         if (validPosition) {
             positions.push(validPosition);
         } else {
-            // Fallback: place in spiral pattern
+            // Fallback: place in spiral pattern, accounting for starOffset
+            const yProgress = (i / photoCount);
+            const widthAtHeight = treeWidth * (0.2 + yProgress * 0.7);
             const angle = i * 2.4;
-            const radius = (i % 10) * 20;
+            const spiralRadius = Math.min((i % 10) * 15, widthAtHeight * 0.3);
+
             positions.push({
-                x: treeWidth / 2 + Math.cos(angle) * radius,
-                y: (i / photoCount) * availableHeight,
+                x: treeWidth / 2 + Math.cos(angle) * spiralRadius,
+                y: starOffset + (yProgress * availableHeight),
                 rotation: (rng() - 0.5) * 10,
                 radius: ornamentRadius
             });
