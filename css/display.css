@@ -11,14 +11,14 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: linear-gradient(to bottom, #0a1628 0%, #1a2332 50%, #0f1419 100%);
+    background: linear-gradient(to bottom, #000000 0%, #1a1a1a 50%, #0a0a0a 100%); /* Telekom Black */
     color: #ffffff;
     min-height: 100vh;
     overflow-x: hidden;
     position: relative;
 }
 
-/* Starry Background */
+/* Starry Background - Telekom Magenta & White */
 .starry-background {
     position: fixed;
     top: 0;
@@ -26,16 +26,16 @@ body {
     width: 100%;
     height: 100%;
     background-image:
-        radial-gradient(2px 2px at 20% 30%, white, transparent),
+        radial-gradient(2px 2px at 20% 30%, #e20074, transparent), /* Magenta stars */
         radial-gradient(2px 2px at 60% 70%, white, transparent),
-        radial-gradient(1px 1px at 50% 50%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, #ff1a8c, transparent), /* Light Magenta */
         radial-gradient(1px 1px at 80% 10%, white, transparent),
-        radial-gradient(2px 2px at 90% 60%, white, transparent),
+        radial-gradient(2px 2px at 90% 60%, #e20074, transparent), /* Magenta stars */
         radial-gradient(1px 1px at 33% 80%, white, transparent),
-        radial-gradient(1px 1px at 15% 55%, white, transparent);
+        radial-gradient(1px 1px at 15% 55%, #ff1a8c, transparent); /* Light Magenta */
     background-size: 200% 200%;
     background-position: 0% 0%, 40% 60%, 60% 40%, 20% 80%, 80% 20%, 50% 90%, 10% 10%;
-    opacity: 0.5;
+    opacity: 0.6;
     animation: twinkle 3s ease-in-out infinite;
     z-index: 0;
     pointer-events: none;
@@ -49,22 +49,27 @@ body {
 /* Header */
 header {
     text-align: center;
-    padding: 2rem 1rem 1rem;
+    padding: 1.5rem 1rem 1rem;
     position: relative;
     z-index: 10;
+    margin-bottom: 1rem;
+    background: rgba(0, 0, 0, 0.4); /* Telekom Dark transparent */
+    backdrop-filter: blur(10px); /* Blur effect for glassmorphism */
+    -webkit-backdrop-filter: blur(10px); /* Safari support */
 }
 
 .title {
     font-size: clamp(1.5rem, 5vw, 3rem);
     font-weight: 700;
     margin-bottom: 0.5rem;
-    text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+    color: #ffffff;
+    text-shadow: 0 2px 10px rgba(226, 0, 116, 0.6); /* Telekom Magenta glow */
     animation: fadeIn 1s ease-out;
 }
 
 .subtitle {
     font-size: clamp(1rem, 2.5vw, 1.5rem);
-    color: #FFD700;
+    color: #e20074; /* Telekom Magenta */
     font-style: italic;
     text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
 }
@@ -117,13 +122,43 @@ main {
 }
 
 .tree-star {
-    filter: drop-shadow(0 0 10px #FFD700);
+    filter: drop-shadow(0 0 15px #e20074); /* Telekom Magenta glow */
     animation: starGlow 2s ease-in-out infinite;
 }
 
+/* Branch styles */
+.branch {
+    transition: stroke-width 0.3s ease;
+}
+
+.tree-needle {
+    opacity: 0.5;
+}
+
+/* Branch detail styles - small protruding branches */
+[class*="branch-detail-"] {
+    transition: opacity 0.3s ease;
+}
+
+/* Subtle color variation by level for more realism */
+.foliage-level-0,
+.foliage-level-1 {
+    filter: brightness(0.95);
+}
+
+.foliage-level-5,
+.foliage-level-6 {
+    filter: brightness(1.05);
+}
+
+/* Ornament hanging strings */
+.ornament-string {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
 @keyframes starGlow {
-    0%, 100% { filter: drop-shadow(0 0 10px #FFD700); }
-    50% { filter: drop-shadow(0 0 20px #FFD700) drop-shadow(0 0 30px #FFD700); }
+    0%, 100% { filter: drop-shadow(0 0 15px #e20074); } /* Telekom Magenta */
+    50% { filter: drop-shadow(0 0 25px #e20074) drop-shadow(0 0 35px #ff1a8c); } /* Bright Magenta pulse */
 }
 
 .tree-growing {
@@ -146,20 +181,14 @@ main {
     pointer-events: none;
 }
 
-/* Individual Ornament */
+/* SVG Ornaments */
 .ornament {
-    position: absolute;
-    border-radius: 50%;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    transition: transform 0.3s ease-out;
-    animation: ornamentSwing 2s ease-in-out infinite;
-    animation-delay: calc(var(--i, 0) * 0.1s);
+    cursor: pointer;
+    transition: filter 0.3s ease;
 }
 
 .ornament:hover {
-    transform: translate(-50%, -50%) rotate(0deg) scale(1.1) !important;
-    z-index: 100;
+    filter: drop-shadow(0 0 15px rgba(226, 0, 116, 0.9)); /* Telekom Magenta glow */
 }
 
 .ornament-new {
@@ -184,62 +213,23 @@ main {
 }
 
 @keyframes ornamentSwing {
-    0%, 100% { transform: translate(-50%, -50%) rotate(var(--rotation, 0deg)); }
-    50% { transform: translate(-50%, -50%) rotate(calc(var(--rotation, 0deg) + 2deg)); }
+    0% { transform: translate(-50%, -50%) rotate(var(--rotation, 0deg)); }
+    25% { transform: translate(calc(-50% + 2px), -50%) rotate(calc(var(--rotation, 0deg) + 3deg)); }
+    50% { transform: translate(-50%, -50%) rotate(var(--rotation, 0deg)); }
+    75% { transform: translate(calc(-50% - 2px), -50%) rotate(calc(var(--rotation, 0deg) - 3deg)); }
+    100% { transform: translate(-50%, -50%) rotate(var(--rotation, 0deg)); }
 }
 
-/* Ornament Image */
+/* SVG Ornament Images and Borders */
 .ornament-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
+    filter: brightness(1.05);
 }
 
-/* Ornament Borders */
-.ornament-border-gold,
-.ornament-border-silver {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    pointer-events: none;
-    box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.5);
+.ornament-border {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
-.ornament-border-gold {
-    border: 3px solid #FFD700;
-    box-shadow:
-        inset 0 0 15px rgba(255, 215, 0, 0.6),
-        0 0 10px rgba(255, 215, 0, 0.4);
-}
-
-.ornament-border-silver {
-    border: 3px solid #C0C0C0;
-    box-shadow:
-        inset 0 0 15px rgba(192, 192, 192, 0.6),
-        0 0 10px rgba(192, 192, 192, 0.4);
-}
-
-/* Glitter Effect */
-.ornament-glitter {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), transparent 50%);
-    pointer-events: none;
-    animation: glitterShine 3s ease-in-out infinite;
-}
-
-@keyframes glitterShine {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 0.6; }
-}
+/* SVG-based ornaments don't need separate glitter effects */
 
 /* Info Panel */
 .info-panel {
@@ -308,6 +298,39 @@ main {
 .upload-link:hover {
     transform: scale(1.05);
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* Refresh Card and Button */
+.refresh-card {
+    background: linear-gradient(135deg, rgba(100, 200, 255, 0.2), rgba(50, 150, 255, 0.2));
+    border-color: #64B5F6;
+}
+
+.refresh-button {
+    background: linear-gradient(135deg, #64B5F6, #42A5F5);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(100, 181, 246, 0.3);
+}
+
+.refresh-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(100, 181, 246, 0.4);
+}
+
+.refresh-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.refresh-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 /* Footer */
