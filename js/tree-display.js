@@ -107,93 +107,142 @@ function renderTree(photoData, isNewPhoto = false) {
     // Clear existing content
     container.innerHTML = '';
 
-    const photoCount = photoData.photos.length;
-    const treeHeight = calculateTreeHeight(photoCount);
-    const treeWidth = treeHeight * 0.6;
+    // Add tree star at top
+    const star = createTreeStar();
+    container.appendChild(star);
 
-    // Generate tree SVG
-    const treeSVG = generateTree(photoCount);
-    container.appendChild(treeSVG);
+    // Generate all 130 ornament positions
+    const allPositions = generateAllOrnamentPositions();
 
-    // Generate photo positions using today's seed
+    // Get seed for today to determine which ornaments get photos
     const seed = getTodaySeed();
-    const positions = generatePhotoPositions(photoCount, treeHeight, treeWidth, seed);
+    const photoCount = photoData.photos.length;
 
-    // Create photo ornaments
+    // Get which ornament indices should have photos
+    const photoOrnamentIndices = getPhotoOrnamentAssignment(photoCount, seed);
+    const photoOrnamentSet = new Set(photoOrnamentIndices);
+
+    // Create photo index mapping
+    const ornamentToPhotoMap = new Map();
+    photoOrnamentIndices.forEach((ornamentIndex, photoIndex) => {
+        ornamentToPhotoMap.set(ornamentIndex, photoIndex);
+    });
+
+    // Create ornaments container
     const ornamentsContainer = document.createElement('div');
     ornamentsContainer.className = 'ornaments-container';
-    ornamentsContainer.style.position = 'absolute';
-    ornamentsContainer.style.top = '0';
-    ornamentsContainer.style.left = '0';
-    ornamentsContainer.style.width = '100%';
-    ornamentsContainer.style.height = '100%';
-    ornamentsContainer.style.pointerEvents = 'none';
+    ornamentsContainer.style.position = 'relative';
+    ornamentsContainer.style.width = '600px';
+    ornamentsContainer.style.height = '800px';
+    ornamentsContainer.style.margin = '0 auto';
 
-    photoData.photos.forEach((photo, index) => {
-        if (index < positions.length) {
-            const ornament = createOrnament(photo, positions[index], index, isNewPhoto && index === photoCount - 1);
-            ornamentsContainer.appendChild(ornament);
+    // Render all ornaments
+    allPositions.forEach((position) => {
+        let ornament;
+
+        if (photoOrnamentSet.has(position.index)) {
+            // This ornament has a photo
+            const photoIndex = ornamentToPhotoMap.get(position.index);
+            const photo = photoData.photos[photoIndex];
+            ornament = createPhotoOrnament(photo, position, photoIndex, isNewPhoto && photoIndex === photoCount - 1);
+        } else {
+            // This ornament is empty (placeholder)
+            ornament = createEmptyOrnament(position);
         }
+
+        ornamentsContainer.appendChild(ornament);
     });
 
     container.appendChild(ornamentsContainer);
-
-    // Add animation class to tree if it's growing
-    if (isNewPhoto) {
-        treeSVG.classList.add('tree-growing');
-        setTimeout(() => treeSVG.classList.remove('tree-growing'), 500);
-    }
 }
 
 /**
- * Create a photo ornament element
+ * Create a photo ornament element (filled with a photo)
  * @param {Object} photo - Photo data
- * @param {Object} position - Position data {x, y, rotation, radius}
- * @param {number} index - Photo index
+ * @param {Object} position - Position data {x, y, size, row, index}
+ * @param {number} photoIndex - Photo index
  * @param {boolean} isNew - Whether this is a newly added photo
  * @returns {HTMLElement} Ornament element
  */
-function createOrnament(photo, position, index, isNew = false) {
+function createPhotoOrnament(photo, position, photoIndex, isNew = false) {
     const ornament = document.createElement('div');
-    ornament.className = 'ornament';
+    ornament.className = 'ornament ornament-photo';
     if (isNew) {
         ornament.classList.add('ornament-new');
     }
 
-    // Calculate position as percentage for responsiveness
-    const photoCount = currentPhotoData.photos.length;
-    const treeHeight = calculateTreeHeight(photoCount);
-    const treeWidth = treeHeight * 0.6;
-
-    // Position relative to tree dimensions (add star offset)
-    const starOffset = 40; // Space for star at top
-    const leftPercent = (position.x / treeWidth) * 100;
-    const topPercent = ((position.y + starOffset) / (treeHeight + starOffset)) * 100;
-
-    ornament.style.left = `${leftPercent}%`;
-    ornament.style.top = `${topPercent}%`;
-    ornament.style.transform = `translate(-50%, -50%) rotate(${position.rotation}deg)`;
-    ornament.style.setProperty('--rotation', `${position.rotation}deg`);
-    ornament.style.width = `${position.radius * 2}px`;
-    ornament.style.height = `${position.radius * 2}px`;
+    // Position the ornament
+    ornament.style.position = 'absolute';
+    ornament.style.left = `${position.x}px`;
+    ornament.style.top = `${position.y}px`;
+    ornament.style.width = `${position.size}px`;
+    ornament.style.height = `${position.size}px`;
+    ornament.style.transform = 'translate(-50%, -50%)';
 
     // Create image
     const img = document.createElement('img');
     img.src = photo.imageData;
     img.alt = 'Team member';
     img.className = 'ornament-image';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.borderRadius = '50%';
+    img.style.objectFit = 'cover';
 
     // Create border (alternating gold/silver)
     const border = document.createElement('div');
-    border.className = index % 2 === 0 ? 'ornament-border-gold' : 'ornament-border-silver';
-
-    // Create glitter overlay
-    const glitter = document.createElement('div');
-    glitter.className = 'ornament-glitter';
+    border.className = photoIndex % 2 === 0 ? 'ornament-border-gold' : 'ornament-border-silver';
+    border.style.position = 'absolute';
+    border.style.top = '0';
+    border.style.left = '0';
+    border.style.right = '0';
+    border.style.bottom = '0';
+    border.style.borderRadius = '50%';
+    border.style.border = '3px solid';
+    border.style.borderColor = photoIndex % 2 === 0 ? '#FFD700' : '#C0C0C0';
+    border.style.pointerEvents = 'none';
 
     ornament.appendChild(img);
     ornament.appendChild(border);
-    ornament.appendChild(glitter);
+
+    return ornament;
+}
+
+/**
+ * Create an empty ornament element (placeholder)
+ * @param {Object} position - Position data {x, y, size, row, index}
+ * @returns {HTMLElement} Ornament element
+ */
+function createEmptyOrnament(position) {
+    const ornament = document.createElement('div');
+    ornament.className = 'ornament ornament-empty';
+
+    // Position the ornament
+    ornament.style.position = 'absolute';
+    ornament.style.left = `${position.x}px`;
+    ornament.style.top = `${position.y}px`;
+    ornament.style.width = `${position.size}px`;
+    ornament.style.height = `${position.size}px`;
+    ornament.style.transform = 'translate(-50%, -50%)';
+
+    // Create the sphere background
+    ornament.style.borderRadius = '50%';
+    ornament.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1))';
+    ornament.style.border = '2px solid rgba(255,255,255,0.3)';
+    ornament.style.backdropFilter = 'blur(5px)';
+    ornament.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.5)';
+
+    // Add a subtle star or snowflake icon
+    const icon = document.createElement('div');
+    icon.innerHTML = position.row % 3 === 0 ? '❄️' : (position.row % 3 === 1 ? '✨' : '⭐');
+    icon.style.fontSize = `${position.size * 0.4}px`;
+    icon.style.position = 'absolute';
+    icon.style.top = '50%';
+    icon.style.left = '50%';
+    icon.style.transform = 'translate(-50%, -50%)';
+    icon.style.opacity = '0.4';
+
+    ornament.appendChild(icon);
 
     return ornament;
 }

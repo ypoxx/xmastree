@@ -93,32 +93,18 @@ main {
     position: relative;
     width: 90vw;
     max-width: 800px;
-    height: 80vh;
-    max-height: 900px;
-    min-height: 400px;
+    min-height: 800px;
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-direction: column;
 }
 
-/* SVG Tree Styles */
-.christmas-tree {
-    width: 100%;
-    height: 100%;
-    filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
-}
-
-.tree-branches {
-    transition: all 0.5s ease-out;
-}
-
-.tree-trunk {
-    transition: all 0.5s ease-out;
-}
-
-.tree-star {
+/* Tree Star at Top */
+.tree-star-top {
     filter: drop-shadow(0 0 10px #FFD700);
     animation: starGlow 2s ease-in-out infinite;
+    user-select: none;
 }
 
 @keyframes starGlow {
@@ -126,24 +112,12 @@ main {
     50% { filter: drop-shadow(0 0 20px #FFD700) drop-shadow(0 0 30px #FFD700); }
 }
 
-.tree-growing {
-    animation: treeGrow 0.5s ease-out;
-}
-
-@keyframes treeGrow {
-    0% { transform: scale(0.95); }
-    50% { transform: scale(1.02); }
-    100% { transform: scale(1); }
-}
-
 /* Ornaments Container */
 .ornaments-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
+    position: relative;
+    width: 600px;
+    height: 800px;
+    margin: 0 auto;
 }
 
 /* Individual Ornament */
@@ -153,39 +127,56 @@ main {
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     transition: transform 0.3s ease-out;
-    animation: ornamentSwing 2s ease-in-out infinite;
-    animation-delay: calc(var(--i, 0) * 0.1s);
 }
 
-.ornament:hover {
-    transform: translate(-50%, -50%) rotate(0deg) scale(1.1) !important;
+/* Photo Ornament (with image) */
+.ornament-photo {
+    animation: ornamentSwing 3s ease-in-out infinite;
+    animation-delay: calc(var(--i, 0) * 0.15s);
+}
+
+.ornament-photo:hover {
+    transform: translate(-50%, -50%) scale(1.2) !important;
     z-index: 100;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
 }
 
+/* Empty Ornament (placeholder) */
+.ornament-empty {
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+.ornament-empty:hover {
+    opacity: 0.9;
+}
+
+/* New Ornament Animation */
 .ornament-new {
-    animation: ornamentDrop 1.5s ease-out, ornamentSwing 2s ease-in-out infinite 1.5s;
+    animation: ornamentDrop 1.5s ease-out, ornamentSwing 3s ease-in-out infinite 1.5s;
 }
 
 @keyframes ornamentDrop {
     0% {
-        transform: translate(-50%, -200%) rotate(0deg);
+        transform: translate(-50%, -200%) scale(0.5);
         opacity: 0;
     }
     60% {
-        transform: translate(-50%, -45%) rotate(10deg);
+        transform: translate(-50%, -45%) scale(1.1);
         opacity: 1;
     }
     80% {
-        transform: translate(-50%, -52%) rotate(-5deg);
+        transform: translate(-50%, -52%) scale(0.95);
     }
     100% {
-        transform: translate(-50%, -50%) rotate(0deg);
+        transform: translate(-50%, -50%) scale(1);
     }
 }
 
 @keyframes ornamentSwing {
-    0%, 100% { transform: translate(-50%, -50%) rotate(var(--rotation, 0deg)); }
-    50% { transform: translate(-50%, -50%) rotate(calc(var(--rotation, 0deg) + 2deg)); }
+    0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+    25% { transform: translate(-50%, -50%) rotate(2deg); }
+    75% { transform: translate(-50%, -50%) rotate(-2deg); }
 }
 
 /* Ornament Image */
@@ -221,24 +212,6 @@ main {
     box-shadow:
         inset 0 0 15px rgba(192, 192, 192, 0.6),
         0 0 10px rgba(192, 192, 192, 0.4);
-}
-
-/* Glitter Effect */
-.ornament-glitter {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), transparent 50%);
-    pointer-events: none;
-    animation: glitterShine 3s ease-in-out infinite;
-}
-
-@keyframes glitterShine {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 0.6; }
 }
 
 /* Info Panel */
@@ -339,7 +312,17 @@ footer {
 /* Responsive Design */
 @media (max-width: 768px) {
     .tree-container {
-        height: 70vh;
+        min-height: 600px;
+    }
+
+    .ornaments-container {
+        width: 400px;
+        height: 600px;
+        transform: scale(0.8);
+    }
+
+    .tree-star-top {
+        font-size: 40px;
     }
 
     .info-panel {
@@ -355,7 +338,10 @@ footer {
 @media (min-width: 1920px) {
     .tree-container {
         max-width: 1000px;
-        max-height: 1100px;
+    }
+
+    .ornaments-container {
+        transform: scale(1.2);
     }
 }
 
