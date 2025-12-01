@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Weihnachtsbaum 2025</title>
+    <meta name="robots" content="noindex, nofollow">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(to bottom, #0a1628 0%, #1a2332 50%, #0f1419 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .admin-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 500px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #FFD700;
+        }
+
+        .warning {
+            background: rgba(220, 53, 69, 0.2);
+            border: 2px solid #dc3545;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .warning-icon {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .warning-text {
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .info-box {
+            background: rgba(100, 150, 200, 0.2);
+            border: 1px solid rgba(100, 150, 200, 0.4);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .info-label {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 0.5rem;
+        }
+
+        .info-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #FFD700;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        button {
+            flex: 1;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .delete-button {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .delete-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        .delete-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .cancel-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .cancel-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 2rem;
+            color: #64B5F6;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #42A5F5;
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            text-align: center;
+            display: none;
+        }
+
+        .message.success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+            color: #28a745;
+        }
+
+        .message.error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid #dc3545;
+            color: #dc3545;
+        }
+
+        .message.info {
+            background: rgba(100, 181, 246, 0.2);
+            border: 1px solid #64B5F6;
+            color: #64B5F6;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(26, 35, 50, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .modal h2 {
+            color: #dc3545;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .modal p {
+            margin-bottom: 2rem;
+            text-align: center;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>🔐 Admin Panel</h1>
+
+        <div class="info-box">
+            <div class="info-label">Aktuell hochgeladene Fotos:</div>
+            <div id="photo-count" class="info-value">Lädt...</div>
+        </div>
+
+        <div class="warning">
+            <div class="warning-icon">⚠️</div>
+            <div class="warning-text">
+                <strong>ACHTUNG!</strong><br>
+                Diese Aktion löscht ALLE hochgeladenen Fotos permanent aus dem Repository.
+                <br><br>
+                Diese Aktion kann <strong>NICHT</strong> rückgängig gemacht werden!
+            </div>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div class="button-group">
+            <button class="cancel-button" onclick="window.location.href='./index.html'">
+                Abbrechen
+            </button>
+            <button id="delete-button" class="delete-button" onclick="showConfirmModal()">
+                🗑️ Alle Fotos löschen
+            </button>
+        </div>
+
+        <a href="./index.html" class="back-link">← Zurück zum Baum</a>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content">
+            <h2>⚠️ Bist du sicher?</h2>
+            <p>
+                Diese Aktion löscht alle <strong id="modal-count">0</strong> Fotos permanent.
+                <br><br>
+                Möchtest du wirklich fortfahren?
+            </p>
+            <div class="button-group">
+                <button class="cancel-button" onclick="hideConfirmModal()">
+                    Nein, abbrechen
+                </button>
+                <button class="delete-button" onclick="confirmDelete()">
+                    Ja, alles löschen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPhotoCount = 0;
+
+        // Load photo count on page load
+        async function loadPhotoCount() {
+            try {
+                const response = await fetch('/api/photos?t=' + Date.now(), {
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentPhotoCount = data.metadata.totalCount;
+                    document.getElementById('photo-count').textContent = currentPhotoCount + ' Fotos';
+                } else {
+                    document.getElementById('photo-count').textContent = 'Fehler beim Laden';
+                }
+            } catch (error) {
+                console.error('Error loading photo count:', error);
+                document.getElementById('photo-count').textContent = 'Fehler beim Laden';
+            }
+        }
+
+        // Show confirmation modal
+        function showConfirmModal() {
+            document.getElementById('modal-count').textContent = currentPhotoCount;
+            document.getElementById('confirm-modal').classList.add('active');
+        }
+
+        // Hide confirmation modal
+        function hideConfirmModal() {
+            document.getElementById('confirm-modal').classList.remove('active');
+        }
+
+        // Confirm and execute deletion
+        async function confirmDelete() {
+            hideConfirmModal();
+
+            const deleteButton = document.getElementById('delete-button');
+            const messageDiv = document.getElementById('message');
+
+            // Disable button and show loading
+            deleteButton.disabled = true;
+            deleteButton.textContent = 'Löscht...';
+
+            showMessage('Fotos werden gelöscht...', 'info');
+
+            try {
+                const response = await fetch('/api/delete-all', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showMessage('✅ Alle Fotos wurden erfolgreich gelöscht!', 'success');
+
+                    // Update count
+                    currentPhotoCount = 0;
+                    document.getElementById('photo-count').textContent = '0 Fotos';
+
+                    // Keep button disabled
+                    deleteButton.textContent = '✓ Gelöscht';
+
+                    // Redirect after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = './index.html';
+                    }, 3000);
+                } else {
+                    const error = await response.json();
+                    showMessage('❌ Fehler: ' + (error.message || 'Unbekannter Fehler'), 'error');
+                    deleteButton.disabled = false;
+                    deleteButton.textContent = '🗑️ Alle Fotos löschen';
+                }
+            } catch (error) {
+                console.error('Error deleting photos:', error);
+                showMessage('❌ Fehler beim Löschen: ' + error.message, 'error');
+                deleteButton.disabled = false;
+                deleteButton.textContent = '🗑️ Alle Fotos löschen';
+            }
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = 'message ' + type;
+            messageDiv.style.display = 'block';
+        }
+
+        // Load count on page load
+        window.addEventListener('DOMContentLoaded', loadPhotoCount);
+    </script>
+</body>
+</html>

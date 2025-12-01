@@ -179,13 +179,29 @@ async function handleUpload(event) {
 }
 
 /**
- * Load photo data from JSON
+ * Load photo data from API (live from GitHub)
  * @returns {Promise<Object>} Photo data
  */
 async function loadPhotoData() {
+    // PRIMARY: Try to load from API endpoint (live from GitHub)
+    try {
+        const response = await fetch('/api/photos?t=' + Date.now(), {
+            headers: { 'Cache-Control': 'no-cache' }
+        });
+        if (response.ok) {
+            const apiData = await response.json();
+            console.log('✓ Loaded from API (GitHub):', apiData.metadata.totalCount, 'photos');
+            return apiData;
+        }
+    } catch (error) {
+        console.log('Could not load from API:', error.message, '- trying fallback');
+    }
+
+    // FALLBACK: Try static file (for local development)
     try {
         const response = await fetch('./data/photos.json?t=' + Date.now());
         if (response.ok) {
+            console.log('✓ Loaded from static file');
             return await response.json();
         }
     } catch (error) {
@@ -259,20 +275,7 @@ async function savePhotoData(photoData) {
  * Update photo count display
  */
 async function updatePhotoCount() {
-    let photoData = await loadPhotoData();
-
-    // Also check localStorage for more recent data
-    try {
-        const localData = localStorage.getItem('treePhotoData');
-        if (localData) {
-            const parsed = JSON.parse(localData);
-            if (parsed.photos.length > photoData.photos.length) {
-                photoData = parsed;
-            }
-        }
-    } catch (error) {
-        console.log('Could not check localStorage');
-    }
+    const photoData = await loadPhotoData();
 
     const countElement = document.getElementById('current-count');
     if (countElement) {
