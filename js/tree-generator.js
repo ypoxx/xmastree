@@ -1,258 +1,98 @@
 /**
- * SVG Christmas Tree Generator
- * Generates a dynamic Christmas tree that grows based on the number of photos
+ * Sphere-Based Christmas Tree Generator
+ * Creates a Christmas tree from spheres arranged in a triangle shape
  */
+
+const MAX_ORNAMENTS = 130;
 
 /**
- * Calculate tree height based on photo count
- * @param {number} photoCount - Number of photos uploaded
- * @returns {number} Tree height in pixels
+ * Generate all ornament positions in a triangle shape
+ * Creates 130 fixed positions arranged as a Christmas tree
+ * @returns {Array} Array of position objects {x, y, size, row, index}
  */
-function calculateTreeHeight(photoCount) {
-    const minHeight = 300; // Increased from 200 for better visibility
-    const maxHeight = 800;
-    const maxPhotos = 130;
-    return minHeight + (photoCount / maxPhotos) * (maxHeight - minHeight);
-}
-
-/**
- * Calculate number of branch levels based on photo count
- * @param {number} photoCount - Number of photos uploaded
- * @returns {number} Number of branch levels
- */
-function getBranchLevels(photoCount) {
-    if (photoCount <= 20) return 3;
-    if (photoCount <= 70) return 5;
-    return 7;
-}
-
-/**
- * Generate SVG Christmas tree
- * @param {number} photoCount - Number of photos to determine tree size
- * @returns {string} SVG markup for the tree
- */
-function generateTree(photoCount) {
-    const height = calculateTreeHeight(photoCount);
-    const width = height * 0.6;
-    const levels = getBranchLevels(photoCount);
-
-    const svgNS = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgNS, "svg");
-
-    // Add space at top for star (40px) and bottom for trunk
-    const starOffset = 40;
-    const totalHeight = height + starOffset + 50;
-    svg.setAttribute("viewBox", `0 0 ${width} ${totalHeight}`);
-    svg.setAttribute("class", "christmas-tree");
-    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-
-    // Create defs for filters and gradients
-    const defs = document.createElementNS(svgNS, "defs");
-
-    // Gradient for tree
-    const gradient = document.createElementNS(svgNS, "linearGradient");
-    gradient.setAttribute("id", "treeGradient");
-    gradient.setAttribute("x1", "0%");
-    gradient.setAttribute("y1", "0%");
-    gradient.setAttribute("x2", "100%");
-    gradient.setAttribute("y2", "0%");
-
-    const stop1 = document.createElementNS(svgNS, "stop");
-    stop1.setAttribute("offset", "0%");
-    stop1.setAttribute("style", "stop-color:#2D5016;stop-opacity:1");
-
-    const stop2 = document.createElementNS(svgNS, "stop");
-    stop2.setAttribute("offset", "50%");
-    stop2.setAttribute("style", "stop-color:#3D6B1F;stop-opacity:1");
-
-    const stop3 = document.createElementNS(svgNS, "stop");
-    stop3.setAttribute("offset", "100%");
-    stop3.setAttribute("style", "stop-color:#4A7C28;stop-opacity:1");
-
-    gradient.appendChild(stop1);
-    gradient.appendChild(stop2);
-    gradient.appendChild(stop3);
-    defs.appendChild(gradient);
-
-    // Glitter filter for ornaments
-    const filter = document.createElementNS(svgNS, "filter");
-    filter.setAttribute("id", "glitter");
-
-    const feTurbulence = document.createElementNS(svgNS, "feTurbulence");
-    feTurbulence.setAttribute("type", "fractalNoise");
-    feTurbulence.setAttribute("baseFrequency", "0.9");
-    feTurbulence.setAttribute("numOctaves", "3");
-    feTurbulence.setAttribute("result", "noise");
-
-    const feDisplacementMap = document.createElementNS(svgNS, "feDisplacementMap");
-    feDisplacementMap.setAttribute("in", "SourceGraphic");
-    feDisplacementMap.setAttribute("in2", "noise");
-    feDisplacementMap.setAttribute("scale", "2");
-
-    filter.appendChild(feTurbulence);
-    filter.appendChild(feDisplacementMap);
-    defs.appendChild(filter);
-
-    svg.appendChild(defs);
-
-    // Create tree trunk (offset by starOffset)
-    const trunkWidth = width * 0.1;
-    const trunkHeight = height * 0.15;
-    const trunk = document.createElementNS(svgNS, "rect");
-    trunk.setAttribute("x", (width - trunkWidth) / 2);
-    trunk.setAttribute("y", starOffset + height - trunkHeight);
-    trunk.setAttribute("width", trunkWidth);
-    trunk.setAttribute("height", trunkHeight);
-    trunk.setAttribute("fill", "#4A3728");
-    trunk.setAttribute("class", "tree-trunk");
-
-    // Create tree branches (triangular sections, offset by starOffset)
-    const branchGroup = document.createElementNS(svgNS, "g");
-    branchGroup.setAttribute("class", "tree-branches");
-
-    const branchHeight = (height - trunkHeight) / levels;
-
-    for (let i = 0; i < levels; i++) {
-        const levelWidth = width * (0.9 - (i * 0.08));
-        const levelTop = starOffset + i * branchHeight * 0.85;
-        const levelBottom = levelTop + branchHeight * 1.2;
-
-        const points = `
-            ${width / 2},${levelTop}
-            ${(width - levelWidth) / 2},${levelBottom}
-            ${(width + levelWidth) / 2},${levelBottom}
-        `;
-
-        const branch = document.createElementNS(svgNS, "polygon");
-        branch.setAttribute("points", points);
-        branch.setAttribute("fill", "url(#treeGradient)");
-        branch.setAttribute("class", `branch-level-${i}`);
-        branch.setAttribute("data-level", i);
-
-        branchGroup.appendChild(branch);
-    }
-
-    // Create star on top (positioned at top of viewBox)
-    const star = document.createElementNS(svgNS, "polygon");
-    const starSize = 25;
-    const starPoints = [];
-    for (let i = 0; i < 5; i++) {
-        const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
-        const x = width / 2 + Math.cos(angle) * starSize;
-        const y = 20 + Math.sin(angle) * starSize; // Positioned at top with some padding
-        starPoints.push(`${x},${y}`);
-    }
-    star.setAttribute("points", starPoints.join(" "));
-    star.setAttribute("fill", "#FFD700");
-    star.setAttribute("class", "tree-star");
-
-    svg.appendChild(branchGroup);
-    svg.appendChild(trunk);
-    svg.appendChild(star);
-
-    return svg;
-}
-
-/**
- * Generate photo positions on the tree
- * Uses seeded random to ensure consistent positions for all viewers
- * @param {number} photoCount - Number of photos
- * @param {number} treeHeight - Height of the tree
- * @param {number} treeWidth - Width of the tree
- * @param {number} seed - Seed for random number generator
- * @returns {Array} Array of position objects {x, y, rotation, size}
- */
-function generatePhotoPositions(photoCount, treeHeight, treeWidth, seed) {
-    const rng = seededRandom(seed);
+function generateAllOrnamentPositions() {
     const positions = [];
-    const ornamentRadius = 25; // Base radius
-    const maxAttempts = 100;
+    const rows = 16; // Number of rows in the tree
+    const baseWidth = 600; // Width at the base
+    const treeHeight = 700; // Total tree height
+    const rowSpacing = treeHeight / rows;
+    const ornamentSize = 50; // Base ornament size in pixels
 
-    const trunkHeight = treeHeight * 0.15;
-    const availableHeight = treeHeight - trunkHeight;
+    let ornamentIndex = 0;
 
-    for (let i = 0; i < photoCount; i++) {
-        let attempts = 0;
-        let validPosition = null;
+    // Generate rows from top to bottom
+    for (let row = 0; row < rows; row++) {
+        // Calculate how many ornaments in this row (increases as we go down)
+        const ornamentsInRow = Math.min(row + 1, Math.ceil((MAX_ORNAMENTS - ornamentIndex) / (rows - row)));
 
-        while (attempts < maxAttempts && !validPosition) {
-            // Random position within tree bounds
-            const yProgress = rng();
-            const y = yProgress * availableHeight;
+        // Calculate width of this row (narrower at top, wider at bottom)
+        const rowProgress = row / (rows - 1); // 0 at top, 1 at bottom
+        const rowWidth = baseWidth * (0.1 + rowProgress * 0.9); // 10% at top, 100% at bottom
 
-            // Calculate tree width at this height (triangle shape)
-            const widthAtHeight = treeWidth * (1 - yProgress * 0.7);
-            const centerX = treeWidth / 2;
-            const xOffset = (rng() - 0.5) * widthAtHeight * 0.8;
-            const x = centerX + xOffset;
+        // Calculate y position
+        const y = row * rowSpacing + 100; // 100px offset for star at top
 
-            // Random rotation
-            const rotation = (rng() - 0.5) * 10; // -5° to +5°
+        // Distribute ornaments evenly across this row
+        const spacing = rowWidth / (ornamentsInRow + 1);
+        const startX = (baseWidth - rowWidth) / 2;
 
-            // Random size variation
-            const size = ornamentRadius + (rng() - 0.5) * 10; // ±5px variation
+        for (let i = 0; i < ornamentsInRow && ornamentIndex < MAX_ORNAMENTS; i++) {
+            const x = startX + spacing * (i + 1);
 
-            const newPosition = { x, y, rotation, radius: size };
+            // Add some size variation (larger at bottom)
+            const sizeVariation = ornamentSize * (0.8 + rowProgress * 0.4);
 
-            // Check collision with existing positions
-            let hasCollision = false;
-            for (const pos of positions) {
-                if (circlesCollide(newPosition, pos, 10)) {
-                    hasCollision = true;
-                    break;
-                }
-            }
-
-            if (!hasCollision) {
-                validPosition = newPosition;
-            }
-
-            attempts++;
-        }
-
-        // If we couldn't find a valid position, just place it anyway
-        if (validPosition) {
-            positions.push(validPosition);
-        } else {
-            // Fallback: place in spiral pattern
-            const angle = i * 2.4;
-            const radius = (i % 10) * 20;
             positions.push({
-                x: treeWidth / 2 + Math.cos(angle) * radius,
-                y: (i / photoCount) * availableHeight,
-                rotation: (rng() - 0.5) * 10,
-                radius: ornamentRadius
+                x: x,
+                y: y,
+                size: sizeVariation,
+                row: row,
+                index: ornamentIndex
             });
+
+            ornamentIndex++;
         }
+
+        if (ornamentIndex >= MAX_ORNAMENTS) break;
     }
 
     return positions;
 }
 
 /**
- * Get branch positions for more accurate ornament placement
- * @param {number} levels - Number of branch levels
- * @param {number} treeHeight - Tree height
- * @param {number} treeWidth - Tree width
- * @returns {Array} Array of branch bounds {yTop, yBottom, widthLeft, widthRight}
+ * Get ornament assignment for photos using seeded random
+ * Determines which ornament positions get which photos
+ * @param {number} photoCount - Number of photos uploaded
+ * @param {number} seed - Seed for random number generator
+ * @returns {Array} Array of ornament indices that should have photos
  */
-function getBranchBounds(levels, treeHeight, treeWidth) {
-    const bounds = [];
-    const trunkHeight = treeHeight * 0.15;
-    const branchHeight = (treeHeight - trunkHeight) / levels;
+function getPhotoOrnamentAssignment(photoCount, seed) {
+    const rng = seededRandom(seed);
+    const allIndices = Array.from({ length: MAX_ORNAMENTS }, (_, i) => i);
 
-    for (let i = 0; i < levels; i++) {
-        const levelWidth = treeWidth * (0.9 - (i * 0.08));
-        const levelTop = i * branchHeight * 0.85;
-        const levelBottom = levelTop + branchHeight * 1.2;
-
-        bounds.push({
-            yTop: levelTop,
-            yBottom: levelBottom,
-            widthLeft: (treeWidth - levelWidth) / 2,
-            widthRight: (treeWidth + levelWidth) / 2
-        });
+    // Shuffle indices using seeded random (Fisher-Yates shuffle)
+    for (let i = allIndices.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [allIndices[i], allIndices[j]] = [allIndices[j], allIndices[i]];
     }
 
-    return bounds;
+    // Return first photoCount indices
+    return allIndices.slice(0, photoCount);
+}
+
+/**
+ * Create a simple star element for the tree top
+ * @returns {HTMLElement} Star element
+ */
+function createTreeStar() {
+    const star = document.createElement('div');
+    star.className = 'tree-star-top';
+    star.innerHTML = '⭐';
+    star.style.position = 'absolute';
+    star.style.top = '20px';
+    star.style.left = '50%';
+    star.style.transform = 'translateX(-50%)';
+    star.style.fontSize = '60px';
+    star.style.zIndex = '100';
+    return star;
 }
